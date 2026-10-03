@@ -1,6 +1,8 @@
 package com.tideo.autobrightness.app.state
 
 import android.app.Application
+import android.content.Context
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.tideo.autobrightness.R
@@ -270,11 +272,11 @@ class DisplayTogglesViewModel @JvmOverloads constructor(
     }
 
     fun requestShizukuGrant() {
-        _state.update { it.copy(grantMessage = getApplication<Application>().getString(R.string.pd_grant_requesting)) }
+        _state.update { it.copy(grantMessage = ContextCompat.getString(getApplication(), R.string.pd_grant_requesting)) }
         privilegeManager.requestShizukuGrant { result ->
             _state.update {
                 it.copy(
-                    grantMessage = result.toMessage(getApplication()),
+                    grantMessage = result.toMessage(ContextCompat.getContextForLanguage(getApplication())),
                     shizukuAvailability = privilegeManager.shizukuAvailability(),
                 )
             }
@@ -287,7 +289,8 @@ class DisplayTogglesViewModel @JvmOverloads constructor(
             val granted = privilegeManager.tryGrantViaRoot()
             _state.update {
                 it.copy(
-                    grantMessage = getApplication<Application>().getString(
+                    grantMessage = ContextCompat.getString(
+                        getApplication(),
                         if (granted) R.string.pd_grant_root_ok else R.string.pd_grant_root_failed,
                     ),
                 )
@@ -296,7 +299,7 @@ class DisplayTogglesViewModel @JvmOverloads constructor(
         }
     }
 
-    private fun ShizukuGrantGateway.Result.toMessage(app: Application): String = when (this) {
+    private fun ShizukuGrantGateway.Result.toMessage(app: Context): String = when (this) {
         ShizukuGrantGateway.Result.Success -> app.getString(R.string.pd_grant_shizuku_ok)
         ShizukuGrantGateway.Result.Unavailable -> app.getString(R.string.pd_grant_shizuku_unavailable)
         ShizukuGrantGateway.Result.PermissionDenied -> app.getString(R.string.pd_grant_shizuku_denied)

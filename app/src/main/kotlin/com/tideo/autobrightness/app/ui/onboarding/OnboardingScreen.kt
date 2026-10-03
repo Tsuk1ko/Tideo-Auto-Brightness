@@ -168,15 +168,17 @@ fun OnboardingScreen(navController: NavHostController) {
         },
         onCopyAdb = { clipboard.setText(AnnotatedString(ui.adbCommand)) },
         onRequestShizuku = {
-            ui = ui.copy(elevatedMessage = "Requesting Shizuku grant…")
+            ui = ui.copy(elevatedMessage = context.getString(R.string.pd_grant_requesting))
             privilegeManager.requestShizukuGrant { result ->
-                ui = ui.copy(elevatedMessage = result.toMessage())
+                ui = ui.copy(elevatedMessage = result.toMessage(context))
                 reprobe() // Reads refreshed tier on success
             }
         },
         onTryRoot = {
             val ok = privilegeManager.tryGrantViaRoot()
-            ui = ui.copy(elevatedMessage = if (ok) "Granted via root." else "Root grant failed or unavailable.")
+            ui = ui.copy(elevatedMessage = context.getString(
+                if (ok) R.string.pd_grant_root_ok else R.string.pd_grant_root_failed,
+            ))
             reprobe()
         },
         onRequestUsageAccess = { usageLauncher.launch(Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS)) },
@@ -384,11 +386,11 @@ private fun ElevatedStepCard(
     }
 }
 
-private fun ShizukuGrantGateway.Result.toMessage(): String = when (this) {
-    ShizukuGrantGateway.Result.Success -> "Granted via Shizuku ✓"
-    ShizukuGrantGateway.Result.Unavailable -> "Shizuku is not running."
-    ShizukuGrantGateway.Result.PermissionDenied -> "Shizuku permission denied."
-    is ShizukuGrantGateway.Result.Failed -> "Shizuku grant failed: $reason"
+private fun ShizukuGrantGateway.Result.toMessage(context: Context): String = when (this) {
+    ShizukuGrantGateway.Result.Success -> context.getString(R.string.pd_grant_shizuku_ok)
+    ShizukuGrantGateway.Result.Unavailable -> context.getString(R.string.pd_grant_shizuku_unavailable)
+    ShizukuGrantGateway.Result.PermissionDenied -> context.getString(R.string.pd_grant_shizuku_denied)
+    is ShizukuGrantGateway.Result.Failed -> context.getString(R.string.pd_grant_shizuku_failed, reason)
 }
 
 private fun notificationsGranted(context: Context): Boolean {
