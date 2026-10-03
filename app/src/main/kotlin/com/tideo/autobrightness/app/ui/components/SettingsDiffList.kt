@@ -51,7 +51,7 @@ fun SettingsDiffList(
                     horizontalArrangement = Arrangement.SpaceBetween,
                 ) {
                     Text(
-                        row.label,
+                        stringResource(row.labelRes),
                         style = MaterialTheme.typography.bodyMedium,
                         color = if (row.changed) AabGold else MaterialTheme.colorScheme.onSurfaceVariant,
                         fontWeight = if (row.changed) FontWeight.SemiBold else FontWeight.Normal,

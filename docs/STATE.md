@@ -108,6 +108,7 @@ creating `27.txt`; re-open only for something major, and say so.
 
 Newest first; ledger rows are the durable detail.
 
+- 2026-10-03 — Profile settings-list labels now follow the app language.
 - 2026-10-03 — Localized live diagnostics, overlay status, relative ages and the settings
   summary, completing the diagnostic-label backlog (DC-040). Improved Chinese translation.
 - 2026-10-03 — Language changes now update the interface in place and refresh widgets.

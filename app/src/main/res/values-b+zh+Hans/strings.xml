@@ -666,6 +666,8 @@
     <string name="profiles_builtin_suffix">（内置）</string>
     <string name="profiles_factory_defaults">出厂默认值</string>
     <string name="settings_diff_defaults">所有设置均为出厂默认值</string>
+    <string name="settings_throttle">节流间隔（ms）</string>
+    <string name="settings_night_light_temperature">夜间模式色温</string>
     <plurals name="settings_diff_changed">
         <item quantity="other">%1$d 项设置与默认值不同（已用金色标出）</item>
     </plurals>
