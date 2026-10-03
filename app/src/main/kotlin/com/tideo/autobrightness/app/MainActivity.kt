@@ -2,6 +2,7 @@ package com.tideo.autobrightness.app
 
 import android.Manifest
 import android.content.pm.PackageManager
+import android.content.res.Configuration
 import android.os.Build
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
@@ -28,6 +29,11 @@ class MainActivity : AppCompatActivity() {
         setContent {
             AutoBrightnessApp()
         }
+    }
+
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+        DashboardWidgetProvider.refresh(this)
     }
 
     private fun maybeRequestNotificationPermission() {

@@ -9,6 +9,7 @@ import android.os.Build
 import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.annotation.StringRes
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -71,7 +72,8 @@ data class OnboardingUiState(
     val locationGranted: Boolean = false,
     // Sideloaded installs may hit Android's "Restricted setting" block (G2R-F33).
     val sideloaded: Boolean = false,
-    val elevatedMessage: String? = null,
+    @StringRes val elevatedMessageRes: Int? = null,
+    val elevatedFailureReason: String? = null,
     val adbCommand: String = "",
 )
 
@@ -168,17 +170,21 @@ fun OnboardingScreen(navController: NavHostController) {
         },
         onCopyAdb = { clipboard.setText(AnnotatedString(ui.adbCommand)) },
         onRequestShizuku = {
-            ui = ui.copy(elevatedMessage = context.getString(R.string.pd_grant_requesting))
+            ui = ui.copy(elevatedMessageRes = R.string.pd_grant_requesting, elevatedFailureReason = null)
             privilegeManager.requestShizukuGrant { result ->
-                ui = ui.copy(elevatedMessage = result.toMessage(context))
+                ui = ui.copy(
+                    elevatedMessageRes = result.toMessageRes(),
+                    elevatedFailureReason = (result as? ShizukuGrantGateway.Result.Failed)?.reason,
+                )
                 reprobe() // Reads refreshed tier on success
             }
         },
         onTryRoot = {
             val ok = privilegeManager.tryGrantViaRoot()
-            ui = ui.copy(elevatedMessage = context.getString(
-                if (ok) R.string.pd_grant_root_ok else R.string.pd_grant_root_failed,
-            ))
+            ui = ui.copy(
+                elevatedMessageRes = if (ok) R.string.pd_grant_root_ok else R.string.pd_grant_root_failed,
+                elevatedFailureReason = null,
+            )
             reprobe()
         },
         onRequestUsageAccess = { usageLauncher.launch(Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS)) },
@@ -379,18 +385,24 @@ private fun ElevatedStepCard(
                     }
                 }
             }
-            state.elevatedMessage?.let {
-                Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.secondary)
+            state.elevatedMessageRes?.let { messageRes ->
+                val message = if (messageRes == R.string.pd_grant_shizuku_failed) {
+                    stringResource(messageRes, state.elevatedFailureReason.orEmpty())
+                } else {
+                    stringResource(messageRes)
+                }
+                Text(message, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.secondary)
             }
         }
     }
 }
 
-private fun ShizukuGrantGateway.Result.toMessage(context: Context): String = when (this) {
-    ShizukuGrantGateway.Result.Success -> context.getString(R.string.pd_grant_shizuku_ok)
-    ShizukuGrantGateway.Result.Unavailable -> context.getString(R.string.pd_grant_shizuku_unavailable)
-    ShizukuGrantGateway.Result.PermissionDenied -> context.getString(R.string.pd_grant_shizuku_denied)
-    is ShizukuGrantGateway.Result.Failed -> context.getString(R.string.pd_grant_shizuku_failed, reason)
+@StringRes
+private fun ShizukuGrantGateway.Result.toMessageRes(): Int = when (this) {
+    ShizukuGrantGateway.Result.Success -> R.string.pd_grant_shizuku_ok
+    ShizukuGrantGateway.Result.Unavailable -> R.string.pd_grant_shizuku_unavailable
+    ShizukuGrantGateway.Result.PermissionDenied -> R.string.pd_grant_shizuku_denied
+    is ShizukuGrantGateway.Result.Failed -> R.string.pd_grant_shizuku_failed
 }
 
 private fun notificationsGranted(context: Context): Boolean {
