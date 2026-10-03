@@ -9,6 +9,7 @@ import android.os.Build
 import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -41,6 +42,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.core.os.LocaleListCompat
 import com.tideo.autobrightness.R
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.AnnotatedString
@@ -206,7 +208,7 @@ fun OnboardingContent(
                 .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            // D-131: app language picker (English only); see OnboardingLanguageCard.
+            // D-131: app language picker.
             OnboardingLanguageCard()
             // G2R-F33: show restricted settings hint if needed (sideloaded app).
             if (state.sideloaded) {
@@ -260,11 +262,12 @@ fun OnboardingContent(
     }
 }
 
-/** App-language picker (D-131), not yet functional (English only). Wired when translated resources land. */
 @Composable
 private fun OnboardingLanguageCard() {
     var expanded by remember { mutableStateOf(false) }
     val english = stringResource(R.string.language_english)
+    val simplifiedChinese = stringResource(R.string.language_simplified_chinese)
+    val currentLanguage = stringResource(R.string.language_current)
     Card(modifier = Modifier.testTag("language_card")) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Text(stringResource(R.string.misc_language_header), style = MaterialTheme.typography.titleMedium)
@@ -273,11 +276,16 @@ private fun OnboardingLanguageCard() {
                     onClick = { expanded = true },
                     modifier = Modifier.fillMaxWidth().testTag("language_selector"),
                 ) {
-                    Text(stringResource(R.string.misc_language_label) + ": " + english)
+                    Text(stringResource(R.string.misc_language_label) + ": " + currentLanguage)
                     Icon(Icons.Filled.ArrowDropDown, contentDescription = null)
                 }
                 DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-                    DropdownMenuItem(text = { Text(english) }, onClick = { expanded = false })
+                    listOf("en" to english, "zh-Hans" to simplifiedChinese).forEach { (tag, label) ->
+                        DropdownMenuItem(text = { Text(label) }, onClick = {
+                            expanded = false
+                            AppCompatDelegate.setApplicationLocales(LocaleListCompat.forLanguageTags(tag))
+                        })
+                    }
                 }
             }
             Text(

@@ -440,7 +440,9 @@
     <string name="misc_language_header">Language</string>
     <string name="misc_language_label">App language</string>
     <string name="language_english">English</string>
-    <string name="misc_language_note">Only English is available right now. Human translations are welcome — see CONTRIBUTING.md.</string>
+    <string name="language_current">English</string>
+    <string name="language_simplified_chinese" translatable="false">简体中文</string>
+    <string name="misc_language_note">Human translations are welcome — see CONTRIBUTING.md.</string>
     <string name="misc_brightness_range">Brightness range</string>
     <string name="misc_animation">Animation</string>
     <string name="misc_notifications">Notifications</string>

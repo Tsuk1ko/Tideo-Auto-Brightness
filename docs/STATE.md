@@ -113,6 +113,9 @@ creating `27.txt`; re-open only for something major, and say so.
 
 Newest first; ledger rows are the durable detail.
 
+- 2026-10-03 — Added Simplified Chinese translation and app-language selection, with
+  persistent language preferences. Notifications and widgets follow the app language;
+  updated translation contribution guidance.
 - 2026-09-28 — **#133: curve inputs persist unclamped wherever Apply accepts them (DD-012); owner
   confirmed on 1.12.0-debug vc26 that a Form1A-40 curve and #133's exact curve (Form1A 28.7353),
   loaded as profiles, survive, the latter after a force-stop.**
