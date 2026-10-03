@@ -113,6 +113,7 @@ creating `27.txt`; re-open only for something major, and say so.
 
 Newest first; ledger rows are the durable detail.
 
+- 2026-10-03 — Improved Simplified Chinese translation for clarity and consistency.
 - 2026-10-03 — Localized Shizuku and root grant feedback in Setup and Privileged Display
   to follow the app language.
 - 2026-10-03 — Added Simplified Chinese translation and app-language selection, with
