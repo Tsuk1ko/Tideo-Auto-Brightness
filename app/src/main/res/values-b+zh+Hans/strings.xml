@@ -441,6 +441,56 @@
     <string name="sd_err_threshold">调暗阈值低于最低亮度。</string>
 
     <!-- Live Debug -->
+    <string name="relative_time_never">暂无记录</string>
+    <string name="relative_time_just_now">刚刚</string>
+    <string name="relative_time_seconds_ago">%1$d 秒前</string>
+    <string name="relative_time_minutes_ago">%1$d 分钟前</string>
+    <string name="relative_time_hours_ago">%1$d 小时前</string>
+    <string name="diag_reactivity_title">实时响应灵敏度</string>
+    <string name="diag_reactivity_threshold">当前阈值：%1$s（照度 %2$s lx）</string>
+    <string name="diag_reactivity_deadzone">传感器死区：%1$s – %2$s lx</string>
+    <string name="diag_circadian_title">实时昼夜节律缩放</string>
+    <string name="diag_circadian_uncompressed">缩放系数（压缩前）：%1$s，时间 %2$s</string>
+    <string name="diag_circadian_true">实际缩放系数：%1$s（亮度 %2$s，范围 %3$s–%4$s）</string>
+    <string name="diag_curve_title">实时亮度</string>
+    <string name="diag_curve_smoothed_lux">当前平滑照度：%1$s</string>
+    <string name="diag_curve_current_bright">当前亮度：%3$s（范围 %1$s–%2$s）</string>
+    <string name="diag_misc_title">实时运行参数</string>
+    <string name="diag_misc_throttle">当前节流间隔：%1$s ms</string>
+    <string name="diag_misc_alpha">当前平滑系数 α：%1$s</string>
+    <string name="diag_dimming_title">实时超级调暗</string>
+    <string name="diag_dimming_rel">调暗强度（相对值）：%1$s</string>
+    <string name="diag_dimming_abs">调暗程度（绝对值）：%1$s（亮度 %2$s）</string>
+    <string name="debug_core_metrics_title">核心指标</string>
+    <string name="debug_smoothed_lux">平滑照度</string>
+    <string name="debug_raw_lux">原始照度</string>
+    <string name="debug_dynamic_threshold">动态阈值</string>
+    <string name="debug_dead_zone">死区（lx）</string>
+    <string name="debug_current_bright">当前亮度</string>
+    <string name="debug_target_bright">目标亮度</string>
+    <string name="debug_scale_title">昼夜节律与缩放</string>
+    <string name="debug_scale_dynamic">缩放系数（压缩前）</string>
+    <string name="debug_scale_compress">实际缩放系数（压缩后）</string>
+    <string name="debug_system_status_title">系统状态</string>
+    <string name="debug_service">服务</string>
+    <string name="debug_service_running">运行中</string>
+    <string name="debug_service_stopped">已停止</string>
+    <string name="debug_override">手动调节</string>
+    <string name="debug_override_no">否</string>
+    <string name="debug_active_rule">生效规则</string>
+    <string name="debug_active_rule_none">无</string>
+    <string name="debug_performance_title">性能与耗时</string>
+    <string name="debug_lux_alpha">平滑系数 α（LuxAlpha）</string>
+    <string name="debug_cycle_time">单次处理耗时（ms）</string>
+    <string name="debug_throttle">响应冷却时间（ms）</string>
+    <string name="debug_last_animation">上次动画</string>
+    <string name="debug_last_update">上次更新</string>
+    <string name="debug_last_sample">上次采样</string>
+    <string name="livedebug_flash_status">状态</string>
+    <string name="livedebug_flash_enabled">已启用</string>
+    <string name="livedebug_flash_off">关闭（仅在应用前台显示）</string>
+    <string name="livedebug_flash_open_settings">打开无障碍设置</string>
+    <string name="livedebug_flash_enable_settings">在无障碍设置中启用</string>
     <string name="livedebug_current">调试：%1$s</string>
     <string name="debug_write_title">亮度写入</string>
     <string name="debug_write_roundtrip">请求值 → 确认值</string>
@@ -615,6 +665,10 @@
     <string name="profiles_context_paused">手动加载配置方案后，情境自动切换已暂停。</string>
     <string name="profiles_builtin_suffix">（内置）</string>
     <string name="profiles_factory_defaults">出厂默认值</string>
+    <string name="settings_diff_defaults">所有设置均为出厂默认值</string>
+    <plurals name="settings_diff_changed">
+        <item quantity="other">%1$d 项设置与默认值不同（已用金色标出）</item>
+    </plurals>
     <string name="profiles_changed_count">%1$d 项与默认值不同</string>
     <string name="profiles_load_replace_warn">这些设置将替换当前配置。</string>
 
