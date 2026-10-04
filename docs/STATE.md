@@ -26,9 +26,6 @@ investigation stays closed (DB-051…DB-060), and Scorecard.dev is a run-once lo
 
 ## Active work
 
-- **Translation review** — `docs/plans/TRANSLATION_REVIEW.md`: [x] version · [x] notification
-  lookup · [x] System default · [x] profile labels · [x] channel refresh · [x] theme check
-  · [x] RUNBOOK index · [ ] STATE compression; one local commit per item, no push (owner, 2026-10-04).
 - **Real-device E2E suite** — `docs/plans/DEVICE_E2E_PLAN.md` (owner-approved 2026-09-13): S0
   done, S1–S9 open; no device mutation before S4's recovery contract is Sol-reviewed.
 - **Night Light fix** — `docs/plans/NIGHT_LIGHT_CIRCADIAN_FIX.md`, for
@@ -67,6 +64,9 @@ Open questions: none.
 
 ## Decided non-items
 
+- **No ledger edits (owner, 2026-10-04).** Do not append rows or modify `docs/LEDGER*.md` in
+  subsequent work; the maintainer allocates rows on their own working branch. This owner override
+  supersedes the normal ledger-append workflow for this contribution; enforced by prose only.
 - **No migration resets an already-snowballed `nightLightTemperature` (owner, 2026-09-21;
   DC-055).** A stored Kelvin cannot be told apart from a setpoint the user genuinely chose, so a
   blanket reset to null would discard real choices while missing contaminated profiles that
@@ -105,29 +105,12 @@ Open questions: none.
 
 Newest first; ledger rows are the durable detail.
 
-- 2026-10-04 — Moved the language-picker reference from Bug fix into RUNBOOK's reference index.
-- 2026-10-04 — Notification channel names refresh on service configuration changes and AppCompat
-  activity language changes, preserving existing channel settings without restarting the service;
-  initialized app locales take precedence over stale Android 12/12L storage.
-- 2026-10-04 — Six profile-list labels use dedicated English/Chinese resources that retain their
-  meaning outside a settings-screen heading.
-- 2026-10-04 — Language picker includes translated System default and clears explicit app locales;
-  Android 12/12L picker tests cover returning from an explicit language to the system default.
-- 2026-10-04 — Translation review: opened 1.13.0 / vc27 with its user changelog; published
-  changelog 26 is unchanged (owner requested minor bump).
-- 2026-10-04 — Notification builds resolve app language once and share the context with their
-  actions and queued override flash.
-- 2026-10-03 — Profile settings-list labels now follow the app language.
-- 2026-10-03 — Localized live diagnostics, overlay status, relative ages and the settings
-  summary, completing the diagnostic-label backlog (DC-040). Improved Chinese translation.
-- 2026-10-03 — Language changes now update the interface in place and refresh widgets.
-  Grant feedback updates to the current app language.
-- 2026-10-03 — Improved Simplified Chinese translation for clarity and consistency.
-- 2026-10-03 — Localized Shizuku and root grant feedback in Setup and Privileged Display
-  to follow the app language.
-- 2026-10-03 — Added Simplified Chinese translation and app-language selection, with
-  persistent language preferences. Notifications and widgets follow the app language;
-  updated translation contribution guidance.
+- 2026-10-03..04 — Added Simplified Chinese and persistent app-language selection (1.13.0 / vc27),
+  including System default; UI, grant feedback, diagnostics (DC-040), profile lists, notifications
+  and widgets follow the language. Review fixes use one language lookup per notification,
+  descriptive profile labels and refreshed channel names with Android 12/12L storage-race
+  coverage; changelog 26 is unchanged. Translation/picker guidance is documented;
+  compiled launch resources retain AppCompat, with device appearance unverified.
 - 2026-09-28 — **#133: curve inputs persist unclamped wherever Apply accepts them (DD-012); owner
   confirmed on 1.12.0-debug vc26 that a Form1A-40 curve and #133's exact curve (Form1A 28.7353),
   loaded as profiles, survive, the latter after a force-stop.**
