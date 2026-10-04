@@ -275,7 +275,12 @@ private fun OnboardingLanguageCard() {
     var expanded by remember { mutableStateOf(false) }
     val english = stringResource(R.string.language_english)
     val simplifiedChinese = stringResource(R.string.language_simplified_chinese)
-    val currentLanguage = stringResource(R.string.language_current)
+    val systemDefault = stringResource(R.string.language_system_default)
+    val currentLanguage = if (AppCompatDelegate.getApplicationLocales().isEmpty) {
+        systemDefault
+    } else {
+        stringResource(R.string.language_current)
+    }
     Card(modifier = Modifier.testTag("language_card")) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Text(stringResource(R.string.misc_language_header), style = MaterialTheme.typography.titleMedium)
@@ -288,10 +293,13 @@ private fun OnboardingLanguageCard() {
                     Icon(Icons.Filled.ArrowDropDown, contentDescription = null)
                 }
                 DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-                    listOf("en" to english, "zh-Hans" to simplifiedChinese).forEach { (tag, label) ->
+                    listOf("" to systemDefault, "en" to english, "zh-Hans" to simplifiedChinese).forEach { (tag, label) ->
                         DropdownMenuItem(text = { Text(label) }, onClick = {
                             expanded = false
-                            AppCompatDelegate.setApplicationLocales(LocaleListCompat.forLanguageTags(tag))
+                            AppCompatDelegate.setApplicationLocales(
+                                if (tag.isEmpty()) LocaleListCompat.getEmptyLocaleList()
+                                else LocaleListCompat.forLanguageTags(tag),
+                            )
                         })
                     }
                 }

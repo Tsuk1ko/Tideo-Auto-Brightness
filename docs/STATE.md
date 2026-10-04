@@ -27,7 +27,7 @@ investigation stays closed (DB-051…DB-060), and Scorecard.dev is a run-once lo
 ## Active work
 
 - **Translation review** — `docs/plans/TRANSLATION_REVIEW.md`: [x] version · [x] notification
-  lookup · [ ] System default · [ ] profile labels · [ ] channel refresh · [ ] theme check
+  lookup · [x] System default · [ ] profile labels · [ ] channel refresh · [ ] theme check
   · [ ] RUNBOOK index · [ ] STATE compression; one local commit per item, no push (owner, 2026-10-04).
 - **Real-device E2E suite** — `docs/plans/DEVICE_E2E_PLAN.md` (owner-approved 2026-09-13): S0
   done, S1–S9 open; no device mutation before S4's recovery contract is Sol-reviewed.
@@ -105,6 +105,8 @@ Open questions: none.
 
 Newest first; ledger rows are the durable detail.
 
+- 2026-10-04 — Language picker includes translated System default and clears explicit app locales;
+  Android 12/12L picker tests cover returning from an explicit language to the system default.
 - 2026-10-04 — Translation review: opened 1.13.0 / vc27 with its user changelog; published
   changelog 26 is unchanged (owner requested minor bump).
 - 2026-10-04 — Notification builds resolve app language once and share the context with their
