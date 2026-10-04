@@ -17,17 +17,18 @@ scripts are immutable; the live ledger is `LEDGER_D.md`. **Release standing is N
 here:** the session banner computes it (`scripts/session-facts.sh`, DC-030), settled by hand with
 `git ls-remote --tags --refs origin 'refs/tags/v*'`.
 
-This branch starts the 1.12.0 train from `main` after the 1.11.0 squash (#131), which carried the
-#126/#127 override-attribution work (DC-002…DC-028), the runtime rot audit (DC-042…DC-046), the
-Night Light work (DC-053…DC-058), the proximity-damp parity restore (DC-064) and the closed
-light-stall train (DC-063, DC-065…DC-071, DD-001…DD-007), whose open findings H1 and H2 live in
-DD-003 and DD-002. It adds #134's notification Discard (DD-011) and #133's unclamped curve inputs (DD-012). Device rounds on 1.10.0-debug vc24 are closed, with the 0–4095 conversion path frozen as
+The tree declares 1.13.0 / vc27 and includes Simplified Chinese and app-language selection,
+#134's notification Discard (DD-011), and #133's unclamped curve inputs (DD-012). The light-stall
+findings H1 and H2 remain recorded in DD-003 and DD-002. Device rounds on 1.10.0-debug vc24 are closed, with the 0–4095 conversion path frozen as
 built, and a later build owes its own run (DC-011…DC-013, DC-025…DC-028, DB-083;
 `DEVICE_TEST_SCRIPT.md` §2); no round script is alive (RUNBOOK §6, DB-010), the force-stop
 investigation stays closed (DB-051…DB-060), and Scorecard.dev is a run-once local input.
 
 ## Active work
 
+- **Translation review** — `docs/plans/TRANSLATION_REVIEW.md`: [x] version · [ ] notification
+  lookup · [ ] System default · [ ] profile labels · [ ] channel refresh · [ ] theme check
+  · [ ] RUNBOOK index · [ ] STATE compression; one local commit per item, no push (owner, 2026-10-04).
 - **Real-device E2E suite** — `docs/plans/DEVICE_E2E_PLAN.md` (owner-approved 2026-09-13): S0
   done, S1–S9 open; no device mutation before S4's recovery contract is Sol-reviewed.
 - **Night Light fix** — `docs/plans/NIGHT_LIGHT_CIRCADIAN_FIX.md`, for
@@ -63,10 +64,6 @@ investigation stays closed (DB-051…DB-060), and Scorecard.dev is a run-once lo
    Live Debug's "Smoothing α" drops to a tenth.
 
 Open questions: none.
-
-**This train is `1.12.0` on vc26, its ONE bump (owner, 2026-09-28),** for #134 and then #133. Land
-further user-facing fixes by editing `changelogs/26.txt` (500-character cap), never by bumping or by
-creating `27.txt`; re-open only for something major, and say so.
 
 ## Decided non-items
 
@@ -108,6 +105,8 @@ creating `27.txt`; re-open only for something major, and say so.
 
 Newest first; ledger rows are the durable detail.
 
+- 2026-10-04 — Translation review: opened 1.13.0 / vc27 with its user changelog; published
+  changelog 26 is unchanged (owner requested minor bump).
 - 2026-10-03 — Profile settings-list labels now follow the app language.
 - 2026-10-03 — Localized live diagnostics, overlay status, relative ages and the settings
   summary, completing the diagnostic-label backlog (DC-040). Improved Chinese translation.

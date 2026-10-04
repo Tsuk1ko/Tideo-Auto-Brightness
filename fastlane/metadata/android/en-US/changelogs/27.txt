@@ -1,0 +1,1 @@
+Added Simplified Chinese and an in-app language picker. Notifications, widgets, live diagnostics and profile settings now follow the app language.
