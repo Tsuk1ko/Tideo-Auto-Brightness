@@ -26,7 +26,7 @@ investigation stays closed (DB-051…DB-060), and Scorecard.dev is a run-once lo
 
 ## Active work
 
-- **Translation review** — `docs/plans/TRANSLATION_REVIEW.md`: [x] version · [ ] notification
+- **Translation review** — `docs/plans/TRANSLATION_REVIEW.md`: [x] version · [x] notification
   lookup · [ ] System default · [ ] profile labels · [ ] channel refresh · [ ] theme check
   · [ ] RUNBOOK index · [ ] STATE compression; one local commit per item, no push (owner, 2026-10-04).
 - **Real-device E2E suite** — `docs/plans/DEVICE_E2E_PLAN.md` (owner-approved 2026-09-13): S0
@@ -107,6 +107,8 @@ Newest first; ledger rows are the durable detail.
 
 - 2026-10-04 — Translation review: opened 1.13.0 / vc27 with its user changelog; published
   changelog 26 is unchanged (owner requested minor bump).
+- 2026-10-04 — Notification builds resolve app language once and share the context with their
+  actions and queued override flash.
 - 2026-10-03 — Profile settings-list labels now follow the app language.
 - 2026-10-03 — Localized live diagnostics, overlay status, relative ages and the settings
   summary, completing the diagnostic-label backlog (DC-040). Improved Chinese translation.

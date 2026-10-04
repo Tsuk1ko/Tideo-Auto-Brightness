@@ -452,6 +452,7 @@ class AmbientMonitoringService : Service() {
     }
 
     private fun createNotificationChannel() {
+        val languageContext = ContextCompat.getContextForLanguage(this)
         val manager = getSystemService(NotificationManager::class.java)
         manager.createNotificationChannel(
             NotificationChannel(
@@ -477,6 +478,7 @@ class AmbientMonitoringService : Service() {
      * G2R-F35/F75: raise ongoing notification to override channel; pops as heads-up and buzzes once.
      */
     internal fun notifyManualOverride() {
+        val languageContext = ContextCompat.getContextForLanguage(this)
         val alert = NotificationCompat.Builder(this, OVERRIDE_CHANNEL_ID)
             .setContentTitle(languageContext.getString(R.string.notif_override_title))
             .setContentText(languageContext.getString(R.string.notif_override_text))
@@ -485,7 +487,7 @@ class AmbientMonitoringService : Service() {
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setCategory(NotificationCompat.CATEGORY_STATUS)
             .setVibrate(longArrayOf(0, 200, 100, 200))
-            .addOverrideActions()
+            .addOverrideActions(languageContext)
             .build()
         getSystemService(NotificationManager::class.java).notify(NOTIFICATION_ID, alert)
         // G2R-F91: route through shared AabFlash surface (overlay → pill → Toast fallback).
@@ -527,10 +529,8 @@ class AmbientMonitoringService : Service() {
         state.paused && state.discardableOverride != null,
     )
 
-    private val languageContext: Context
-        get() = ContextCompat.getContextForLanguage(this)
-
     private fun buildNotification(model: NotificationModel): Notification {
+        val languageContext = ContextCompat.getContextForLanguage(this)
         // G1-F1: surface permission issue instead of looking silently broken.
         val canWrite = android.provider.Settings.System.canWrite(this)
         val title = when {
@@ -556,7 +556,7 @@ class AmbientMonitoringService : Service() {
         contextLine?.let { builder.setSubText(it) }
 
         // F76: NO Pause action (confused users). DD-011: Discard displaces Reset (three actions max).
-        if (model.canDiscard) return builder.addOverrideActions().build()
+        if (model.canDiscard) return builder.addOverrideActions(languageContext).build()
         if (model.paused) {
             builder.addAction(0, languageContext.getString(R.string.action_resume), actionIntent(ACTION_RESUME))
         }
@@ -565,7 +565,7 @@ class AmbientMonitoringService : Service() {
         return builder.build()
     }
 
-    private fun NotificationCompat.Builder.addOverrideActions() = this
+    private fun NotificationCompat.Builder.addOverrideActions(languageContext: Context) = this
         .addAction(0, languageContext.getString(R.string.action_discard), actionIntent(ACTION_DISCARD_OVERRIDE))
         .addAction(0, languageContext.getString(R.string.action_resume), actionIntent(ACTION_RESUME))
         .addAction(0, languageContext.getString(R.string.action_disable), actionIntent(ACTION_DISABLE))
