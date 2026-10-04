@@ -102,6 +102,9 @@ Open questions: none.
 
 Newest first; ledger rows are the durable detail.
 
+- 2026-10-04 — User Guide HTML and its WebView background follow the app theme, including changes
+  while the page is open; callout colors use theme surface/error pairs. Robolectric covers light,
+  dark and both switch directions; actual device rendering remains unverified.
 - 2026-10-03..04 — Added Simplified Chinese and persistent app-language selection (1.13.0 / vc27),
   including System default; UI, grant feedback, diagnostics (DC-040), profile lists, notifications
   and widgets follow the language. Review fixes use one language lookup per notification,
