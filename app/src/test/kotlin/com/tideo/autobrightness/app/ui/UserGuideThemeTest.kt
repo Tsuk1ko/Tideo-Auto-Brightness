@@ -18,6 +18,8 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
+import kotlin.math.max
+import kotlin.math.min
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertSame
@@ -84,6 +86,62 @@ class UserGuideThemeTest {
         val html = checkNotNull(shadow.lastLoadDataWithBaseURL).data.lowercase(Locale.ROOT)
         assertTrue(html.contains("color-scheme: $scheme;"), "HTML color scheme should follow the theme")
         assertTrue(html.contains("background:$background; color:$foreground;"), "HTML body should follow the theme")
+        if (dark) {
+            val originalColors = mapOf(
+                ("h2" to "color") to "#00a986",
+                ("strong, b" to "color") to "#ffc107",
+                ("blockquote" to "color") to "#cfeee6",
+                ("blockquote" to "background") to "#2e3633",
+                (".outro" to "color") to "#00c79e",
+                (".tip" to "background") to "#26302e",
+                (".tip .lead" to "color") to "#00c79e",
+                (".warn" to "background") to "#3a2b2a",
+                (".warn .lead" to "color") to "#ff8a80",
+                (".warn strong, .warn b" to "color") to "#ff8a80",
+            )
+            originalColors.forEach { (property, expected) ->
+                assertEquals(expected, cssProperty(html, property.first, property.second), property.toString())
+            }
+        } else {
+            val gold = cssProperty(html, "strong, b", "color")
+            val tip = cssProperty(html, ".tip .lead", "color")
+            val warning = cssProperty(html, ".warn .lead", "color")
+            val goldRgb = Color.parseColor(gold)
+            assertTrue(Color.red(goldRgb) >= 128 && Color.red(goldRgb) > Color.green(goldRgb) && Color.blue(goldRgb) < 32,
+                "Emphasis should remain visibly golden")
+            assertGreen(tip)
+            assertGreen(cssProperty(html, "blockquote", "background"))
+            assertGreen(cssProperty(html, ".tip", "background"))
+            val warningRgb = Color.parseColor(warning)
+            assertTrue(Color.red(warningRgb) >= 128 && Color.red(warningRgb) > 2 * Color.green(warningRgb),
+                "Warning should keep its coral color")
+            val warningBackground = cssProperty(html, ".warn", "background")
+            val warningBackgroundRgb = Color.parseColor(warningBackground)
+            assertTrue(Color.red(warningBackgroundRgb) - Color.green(warningBackgroundRgb) >= 10 &&
+                Color.red(warningBackgroundRgb) - Color.blue(warningBackgroundRgb) >= 10,
+                "Warning background should retain its coral tint")
+            assertTrue(contrast(gold, background) >= 4.5f, "Gold emphasis should be readable")
+            assertTrue(contrast(tip, cssProperty(html, ".tip", "background")) >= 4.5f, "Tip label should be readable")
+            assertTrue(contrast(warning, warningBackground) >= 4.5f, "Warning label should be readable")
+        }
         assertFalse(view.settings.javaScriptEnabled)
+    }
+
+    private fun cssProperty(html: String, selector: String, property: String): String {
+        val block = checkNotNull(Regex("${Regex.escape(selector)}\\s*\\{([^}]+)}").find(html)).groupValues[1]
+        return block.split(';').map { it.trim().split(':', limit = 2) }
+            .first { it.size == 2 && it[0] == property }[1].trim()
+    }
+
+    private fun assertGreen(hex: String) {
+        val rgb = Color.parseColor(hex)
+        assertTrue(Color.green(rgb) - Color.red(rgb) >= 10 && Color.green(rgb) - Color.blue(rgb) >= 3,
+            "$hex should have a green tint")
+    }
+
+    private fun contrast(foreground: String, background: String): Float {
+        val front = Color.luminance(Color.parseColor(foreground))
+        val back = Color.luminance(Color.parseColor(background))
+        return (max(front, back) + 0.05f) / (min(front, back) + 0.05f)
     }
 }

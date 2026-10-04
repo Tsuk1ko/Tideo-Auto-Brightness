@@ -89,8 +89,15 @@ private fun buildGuideHtml(
 ): String {
     val dark = colors.background.luminance() < 0.5f
     val scheme = if (dark) "dark" else "light"
-    val accent = (if (dark) colors.tertiary else colors.primary).cssColor()
-    val emphasis = (if (dark) colors.secondary else colors.onSecondaryContainer).cssColor()
+    val accent = if (dark) "#00a986" else "#007c63"
+    val emphasis = if (dark) "#ffc107" else "#8a6500"
+    val quoteText = if (dark) "#cfeee6" else "#244b40"
+    val quoteBackground = if (dark) "#2e3633" else "#e8f3ee"
+    val lead = if (dark) "#00c79e" else "#007c63"
+    val tipBackground = if (dark) "#26302e" else "#e4f4ed"
+    val warningBackground = if (dark) "#3a2b2a" else "#fff0ee"
+    val warningText = if (dark) "#ff8a80" else "#b3342c"
+    val divider = if (dark) "#4a4a4a" else colors.outlineVariant.cssColor()
     val body = buildString {
         // Welcome → intro blockquote (Tasker styles the welcome as a highlighted lead-in).
         append("<h2>").append(esc(welcomeTitle)).append("</h2>")
@@ -107,22 +114,22 @@ private fun buildGuideHtml(
           :root { color-scheme: $scheme; }
           body { background:${colors.background.cssColor()}; color:${colors.onBackground.cssColor()}; font-family:sans-serif; line-height:1.55;
                  margin:0; padding:16px 18px 28px; font-size:15px; }
-          h2 { color:$accent; font-size:16px; margin:24px 0 6px; border-bottom:1px solid ${colors.outlineVariant.cssColor()};
+          h2 { color:$accent; font-size:16px; margin:24px 0 6px; border-bottom:1px solid $divider;
                padding-bottom:4px; }
           p { margin:6px 0; }
           ul { margin:6px 0 6px 2px; padding-left:18px; }
           li { margin:5px 0; }
           strong, b { color:$emphasis; font-weight:600; }
-          blockquote { border-left:3px solid ${colors.primary.cssColor()}; margin:8px 0; padding:8px 14px; color:${colors.onSurfaceVariant.cssColor()};
-                       background:${colors.surfaceVariant.cssColor()}; font-style:italic; border-radius:0 6px 6px 0; }
-          .outro { color:${colors.onSurfaceVariant.cssColor()}; font-weight:600; font-style:normal; }
-          .tip { border-left:3px solid $accent; background:${colors.surfaceVariant.cssColor()}; color:${colors.onSurfaceVariant.cssColor()}; padding:8px 12px; margin:8px 0;
+          blockquote { border-left:3px solid #007c63; margin:8px 0; padding:8px 14px; color:$quoteText;
+                       background:$quoteBackground; font-style:italic; border-radius:0 6px 6px 0; }
+          .outro { color:$lead; font-weight:600; font-style:normal; }
+          .tip { border-left:3px solid $accent; background:$tipBackground; padding:8px 12px; margin:8px 0;
                  border-radius:0 6px 6px 0; }
-          .tip .lead { color:${colors.onSurfaceVariant.cssColor()}; font-weight:600; }
-          .warn { border-left:3px solid ${colors.error.cssColor()}; background:${colors.errorContainer.cssColor()}; color:${colors.onErrorContainer.cssColor()}; padding:8px 12px; margin:8px 0;
+          .tip .lead { color:$lead; font-weight:600; }
+          .warn { border-left:3px solid #e5534b; background:$warningBackground; padding:8px 12px; margin:8px 0;
                   border-radius:0 6px 6px 0; }
-          .warn .lead { color:${colors.onErrorContainer.cssColor()}; font-weight:600; }
-          .warn strong, .warn b { color:${colors.onErrorContainer.cssColor()}; }
+          .warn .lead { color:$warningText; font-weight:600; }
+          .warn strong, .warn b { color:$warningText; }
         </style></head>
         <body>$body</body></html>
     """.trimIndent()
