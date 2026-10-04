@@ -8,7 +8,7 @@ Runtime changes also require the RUNBOOK glue-review pass. Device appearance rem
 - [x] Review 4: set vc27 / 1.13.0 in `app/build.gradle.kts`; add changelog 27, preserve 26.
 - [x] Review 1: resolve language once in each notification build and pass the context to actions.
 - [x] Review 2: add translated System default to `OnboardingScreen.kt`; clear application locales.
-- [ ] Review 3: give the six profile-list labels dedicated English/Chinese `settings_*` resources.
+- [x] Review 3: give the six profile-list labels dedicated English/Chinese `settings_*` resources.
 - [ ] Review 5: update existing notification channel names when the service configuration changes;
   test both channels and preserve their settings.
 - [ ] Review 6: inspect the assembled launch theme; retain AppCompat unless a concrete defect is found.

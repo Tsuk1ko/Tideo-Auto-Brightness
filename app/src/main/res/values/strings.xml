@@ -713,6 +713,12 @@
     <string name="profiles_factory_defaults">Factory defaults</string>
     <string name="settings_diff_defaults">All settings at factory defaults</string>
     <string name="settings_throttle">Throttle (ms)</string>
+    <string name="settings_offset">Brightness offset</string>
+    <string name="settings_scale">Brightness scale</string>
+    <string name="settings_dimming_exponent">Dimming curve</string>
+    <string name="settings_dimming_strength">Dimming strength</string>
+    <string name="settings_night_light_circadian">Night Light circadian tracking</string>
+    <string name="settings_pwm_exponent">PWM curve</string>
     <string name="settings_night_light_temperature">Night Light temperature</string>
     <plurals name="settings_diff_changed">
         <item quantity="one">%1$d setting changed from default (shown in gold)</item>

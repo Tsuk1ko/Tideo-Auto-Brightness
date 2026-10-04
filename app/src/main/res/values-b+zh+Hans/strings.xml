@@ -668,6 +668,12 @@
     <string name="profiles_factory_defaults">出厂默认值</string>
     <string name="settings_diff_defaults">所有设置均为出厂默认值</string>
     <string name="settings_throttle">节流间隔（ms）</string>
+    <string name="settings_offset">亮度偏移量</string>
+    <string name="settings_scale">亮度缩放</string>
+    <string name="settings_dimming_exponent">超级调暗曲线</string>
+    <string name="settings_dimming_strength">超级调暗强度</string>
+    <string name="settings_night_light_circadian">夜间模式跟随昼夜节律</string>
+    <string name="settings_pwm_exponent">PWM 调暗曲线</string>
     <string name="settings_night_light_temperature">夜间模式色温</string>
     <plurals name="settings_diff_changed">
         <item quantity="other">%1$d 项设置与默认值不同（已用金色标出）</item>
