@@ -31,6 +31,7 @@ vectors are ground truth**; where any doc disagrees with the code, trust the cod
 | A specific task's actions / curve math | `extraction/tasks/task<id>_*.md` |
 | Default values & variable classification | `extraction/defaults_audit.md` |
 | Ancillary features (tile, notification, debug, import/export) | `extraction/features_spec.md` |
+| App languages and translations | `CONTRIBUTING.md`; picker: `app/src/main/kotlin/com/tideo/autobrightness/app/ui/onboarding/OnboardingScreen.kt`; supported locales: `app/src/main/res/xml/locales_config.xml`. `MainActivity` uses AppCompat's app-language API with automatic locale storage on Android 12/12L. |
 | Anonymous scene-handler tasks | `extraction/tasks/anonymous_handlers.md` |
 | Scene → M3 screen mapping | `screen_map.md`, `extraction/scenes/*` |
 | How to safely re-read the source XML | `XML_RECIPES.md` |
@@ -93,9 +94,6 @@ Each: *when · read first · code to touch · parity obligations · acceptance �
 ### 4. Bug fix
 - **Read first:** the reference doc for the affected area (above) + any related
   `docs/LEDGER.md` row.
-- **Language picker:** `CONTRIBUTING.md` describes translation resources; the picker lives in
-  `ui/onboarding/OnboardingScreen.kt`, and `res/xml/locales_config.xml` lists supported locales.
-  `MainActivity` uses AppCompat's app-language API with automatic locale storage on Android 12/12L.
 - **Steps:** reproduce → add/adjust a failing test first → fix so it conforms to the golden
   vectors (never edit a golden vector to pass; changing one needs proof the extraction was
   wrong + a `STATE.md` entry) → run the ladder → **glue-review protocol** (below) if the fix

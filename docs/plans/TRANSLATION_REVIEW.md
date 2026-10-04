@@ -11,8 +11,8 @@ Runtime changes also require the RUNBOOK glue-review pass. Device appearance rem
 - [x] Review 3: give the six profile-list labels dedicated English/Chinese `settings_*` resources.
 - [x] Review 5: update existing notification channel names when the service configuration changes;
   test both channels and preserve their settings.
-- [ ] Review 6: inspect the assembled launch theme; retain AppCompat unless a concrete defect is found.
-- [ ] Nit: move the language-picker reference into RUNBOOK's reference index.
+- [x] Review 6: compiled launch resources retain the AppCompat parent; device appearance unverified.
+- [x] Nit: move the language-picker reference into RUNBOOK's reference index.
 - [ ] Nit: compress the six completed translation changelog entries in STATE into one.
 
 For notification changes, reuse `AmbientMonitoringServiceTest`; for System default, exercise the

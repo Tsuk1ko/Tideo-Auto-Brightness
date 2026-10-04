@@ -27,8 +27,8 @@ investigation stays closed (DB-051…DB-060), and Scorecard.dev is a run-once lo
 ## Active work
 
 - **Translation review** — `docs/plans/TRANSLATION_REVIEW.md`: [x] version · [x] notification
-  lookup · [x] System default · [x] profile labels · [x] channel refresh · [ ] theme check
-  · [ ] RUNBOOK index · [ ] STATE compression; one local commit per item, no push (owner, 2026-10-04).
+  lookup · [x] System default · [x] profile labels · [x] channel refresh · [x] theme check
+  · [x] RUNBOOK index · [ ] STATE compression; one local commit per item, no push (owner, 2026-10-04).
 - **Real-device E2E suite** — `docs/plans/DEVICE_E2E_PLAN.md` (owner-approved 2026-09-13): S0
   done, S1–S9 open; no device mutation before S4's recovery contract is Sol-reviewed.
 - **Night Light fix** — `docs/plans/NIGHT_LIGHT_CIRCADIAN_FIX.md`, for
@@ -105,6 +105,7 @@ Open questions: none.
 
 Newest first; ledger rows are the durable detail.
 
+- 2026-10-04 — Moved the language-picker reference from Bug fix into RUNBOOK's reference index.
 - 2026-10-04 — Notification channel names refresh on service configuration changes and AppCompat
   activity language changes, preserving existing channel settings without restarting the service;
   initialized app locales take precedence over stale Android 12/12L storage.
