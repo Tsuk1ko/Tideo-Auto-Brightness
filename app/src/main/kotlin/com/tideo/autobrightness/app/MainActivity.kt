@@ -11,6 +11,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import com.tideo.autobrightness.app.runtime.AutoBrightnessRuntime
+import com.tideo.autobrightness.app.runtime.AmbientMonitoringService
 import com.tideo.autobrightness.app.ui.AutoBrightnessApp
 import com.tideo.autobrightness.app.widget.DashboardWidgetProvider
 
@@ -26,6 +27,7 @@ class MainActivity : AppCompatActivity() {
         maybeRequestNotificationPermission()
         AutoBrightnessRuntime.bootstrap(this)
         DashboardWidgetProvider.refresh(this)
+        AmbientMonitoringService.refreshNotificationChannelsForActivity(this)
         setContent {
             AutoBrightnessApp()
         }
@@ -34,6 +36,7 @@ class MainActivity : AppCompatActivity() {
     override fun onConfigurationChanged(newConfig: Configuration) {
         super.onConfigurationChanged(newConfig)
         DashboardWidgetProvider.refresh(this)
+        AmbientMonitoringService.refreshNotificationChannelsForActivity(this)
     }
 
     private fun maybeRequestNotificationPermission() {

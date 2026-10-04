@@ -9,7 +9,7 @@ Runtime changes also require the RUNBOOK glue-review pass. Device appearance rem
 - [x] Review 1: resolve language once in each notification build and pass the context to actions.
 - [x] Review 2: add translated System default to `OnboardingScreen.kt`; clear application locales.
 - [x] Review 3: give the six profile-list labels dedicated English/Chinese `settings_*` resources.
-- [ ] Review 5: update existing notification channel names when the service configuration changes;
+- [x] Review 5: update existing notification channel names when the service configuration changes;
   test both channels and preserve their settings.
 - [ ] Review 6: inspect the assembled launch theme; retain AppCompat unless a concrete defect is found.
 - [ ] Nit: move the language-picker reference into RUNBOOK's reference index.

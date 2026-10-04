@@ -10,13 +10,16 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.content.res.Configuration
 import android.content.pm.ServiceInfo
 import android.os.Handler
+import android.os.Build
 import android.os.IBinder
 import android.os.Looper
 import android.service.quicksettings.TileService
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
+import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.app.ServiceCompat
 import com.tideo.autobrightness.R
 import com.tideo.autobrightness.app.AppModule
@@ -119,7 +122,7 @@ class AmbientMonitoringService : Service() {
 
     override fun onCreate() {
         super.onCreate()
-        createNotificationChannel()
+        refreshNotificationChannels(notificationLanguageContext(this))
         // F75: clear stale override notification from older builds.
         getSystemService(NotificationManager::class.java).cancel(OVERRIDE_NOTIFICATION_ID)
 
@@ -451,34 +454,16 @@ class AmbientMonitoringService : Service() {
         stopSelf()
     }
 
-    private fun createNotificationChannel() {
-        val languageContext = ContextCompat.getContextForLanguage(this)
-        val manager = getSystemService(NotificationManager::class.java)
-        manager.createNotificationChannel(
-            NotificationChannel(
-                CHANNEL_ID,
-                languageContext.getString(R.string.notif_channel_ambient),
-                NotificationManager.IMPORTANCE_LOW,
-            ),
-        )
-        // G2R-F35: separate HIGH-importance vibrating channel for manual-override alert.
-        manager.createNotificationChannel(
-            NotificationChannel(
-                OVERRIDE_CHANNEL_ID,
-                languageContext.getString(R.string.notif_channel_override),
-                NotificationManager.IMPORTANCE_HIGH,
-            ).apply {
-                enableVibration(true)
-                vibrationPattern = longArrayOf(0, 200, 100, 200)
-            },
-        )
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+        refreshNotificationChannels(notificationLanguageContext(this))
     }
 
     /**
      * G2R-F35/F75: raise ongoing notification to override channel; pops as heads-up and buzzes once.
      */
     internal fun notifyManualOverride() {
-        val languageContext = ContextCompat.getContextForLanguage(this)
+        val languageContext = notificationLanguageContext(this)
         val alert = NotificationCompat.Builder(this, OVERRIDE_CHANNEL_ID)
             .setContentTitle(languageContext.getString(R.string.notif_override_title))
             .setContentText(languageContext.getString(R.string.notif_override_text))
@@ -530,7 +515,7 @@ class AmbientMonitoringService : Service() {
     )
 
     private fun buildNotification(model: NotificationModel): Notification {
-        val languageContext = ContextCompat.getContextForLanguage(this)
+        val languageContext = notificationLanguageContext(this)
         // G1-F1: surface permission issue instead of looking silently broken.
         val canWrite = android.provider.Settings.System.canWrite(this)
         val title = when {
@@ -617,6 +602,45 @@ class AmbientMonitoringService : Service() {
     override fun onBind(intent: Intent?): IBinder? = null
 
     companion object {
+        @Volatile internal var activityLocalesInitialized = false
+
+        internal fun refreshNotificationChannelsForActivity(context: Context) {
+            activityLocalesInitialized = true
+            refreshNotificationChannels(context)
+        }
+
+        private fun notificationLanguageContext(context: Context): Context {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU || !activityLocalesInitialized) {
+                return ContextCompat.getContextForLanguage(context)
+            }
+            val locales = AppCompatDelegate.getApplicationLocales()
+            if (locales.isEmpty) return context
+            val configuration = Configuration(context.resources.configuration).apply {
+                setLocales(android.os.LocaleList.forLanguageTags(locales.toLanguageTags()))
+            }
+            return context.createConfigurationContext(configuration)
+        }
+
+        private fun refreshNotificationChannels(context: Context) {
+            val manager = context.getSystemService(NotificationManager::class.java)
+            val ambientName = context.getString(R.string.notif_channel_ambient)
+            val ambient = manager.getNotificationChannel(CHANNEL_ID) ?: NotificationChannel(
+                CHANNEL_ID, ambientName, NotificationManager.IMPORTANCE_LOW,
+            )
+            ambient.name = ambientName
+            manager.createNotificationChannel(ambient)
+            // G2R-F35: separate HIGH-importance vibrating channel for manual-override alert.
+            val overrideName = context.getString(R.string.notif_channel_override)
+            val alert = manager.getNotificationChannel(OVERRIDE_CHANNEL_ID) ?: NotificationChannel(
+                OVERRIDE_CHANNEL_ID, overrideName, NotificationManager.IMPORTANCE_HIGH,
+            ).apply {
+                enableVibration(true)
+                vibrationPattern = longArrayOf(0, 200, 100, 200)
+            }
+            alert.name = overrideName
+            manager.createNotificationChannel(alert)
+        }
+
         const val ACTION_START = "com.tideo.autobrightness.runtime.action.START"
         const val ACTION_PAUSE = "com.tideo.autobrightness.runtime.action.PAUSE"
         const val ACTION_RESUME = "com.tideo.autobrightness.runtime.action.RESUME"
