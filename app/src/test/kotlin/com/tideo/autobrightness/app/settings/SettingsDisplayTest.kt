@@ -46,8 +46,8 @@ class SettingsDisplayTest {
     fun crypticKeys_useLabelResources() {
         // G2R-F84: friendly labels instead of raw "form1A"/"form2C" names.
         val rows = AabSettings().displayRows().associateBy { it.taskerVariable }
-        assertEquals(R.string.curve_form1a, rows.getValue("%AAB_Form1A").labelRes)
-        assertEquals(R.string.curve_form2c, rows.getValue("%AAB_Form2C").labelRes)
+        assertEquals(R.string.settings_form1a, rows.getValue("%AAB_Form1A").labelRes)
+        assertEquals(R.string.settings_form2c, rows.getValue("%AAB_Form2C").labelRes)
         assertEquals(R.string.misc_min_brightness, rows.getValue("%AAB_MinBright").labelRes)
     }
 }

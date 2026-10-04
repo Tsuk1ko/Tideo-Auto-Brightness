@@ -675,6 +675,15 @@
     <string name="settings_night_light_circadian">夜间模式跟随昼夜节律</string>
     <string name="settings_pwm_exponent">PWM 调暗曲线</string>
     <string name="settings_night_light_temperature">夜间模式色温</string>
+    <string name="settings_form1a">区域 1 缩放系数</string>
+    <string name="settings_form2b">区域 2 缩放系数</string>
+    <string name="settings_form2c">区域 2 偏移量</string>
+    <string name="settings_dimming_threshold">超级调暗阈值</string>
+    <string name="settings_dim_spread">超级调暗变化幅度</string>
+    <string name="settings_pwm_sensitive">PWM 敏感模式</string>
+    <string name="settings_min_wait">动画每步最短等待时间（ms）</string>
+    <string name="settings_max_wait">动画每步最长等待时间（ms）</string>
+    <string name="settings_scale_transition">缩放过渡</string>
     <plurals name="settings_diff_changed">
         <item quantity="other">%1$d 项设置与默认值不同（已用金色标出）</item>
     </plurals>

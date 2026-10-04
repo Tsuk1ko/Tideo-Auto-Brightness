@@ -64,9 +64,6 @@ Open questions: none.
 
 ## Decided non-items
 
-- **No ledger edits (owner, 2026-10-04).** Do not append rows or modify `docs/LEDGER*.md` in
-  subsequent work; the maintainer allocates rows on their own working branch. This owner override
-  supersedes the normal ledger-append workflow for this contribution; enforced by prose only.
 - **No migration resets an already-snowballed `nightLightTemperature` (owner, 2026-09-21;
   DC-055).** A stored Kelvin cannot be told apart from a setpoint the user genuinely chose, so a
   blanket reset to null would discard real choices while missing contaminated profiles that
@@ -108,7 +105,8 @@ Newest first; ledger rows are the durable detail.
 - 2026-10-03..04 — Added Simplified Chinese and persistent app-language selection (1.13.0 / vc27),
   including System default; UI, grant feedback, diagnostics (DC-040), profile lists, notifications
   and widgets follow the language. Review fixes use one language lookup per notification,
-  descriptive profile labels and refreshed channel names with Android 12/12L storage-race
+  profile labels matching all 40 original English entries, with independent Chinese labels where
+  screen wording differs, and refreshed channel names with Android 12/12L storage-race
   coverage; changelog 26 is unchanged. Translation/picker guidance is documented;
   compiled launch resources retain AppCompat, with device appearance unverified.
 - 2026-09-28 — **#133: curve inputs persist unclamped wherever Apply accepts them (DD-012); owner

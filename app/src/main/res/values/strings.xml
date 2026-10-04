@@ -720,6 +720,15 @@
     <string name="settings_night_light_circadian">Night Light circadian tracking</string>
     <string name="settings_pwm_exponent">PWM curve</string>
     <string name="settings_night_light_temperature">Night Light temperature</string>
+    <string name="settings_form1a">Zone 1 scaling</string>
+    <string name="settings_form2b">Zone 2 scaling</string>
+    <string name="settings_form2c">Zone 2 offset</string>
+    <string name="settings_dimming_threshold">Dimming threshold</string>
+    <string name="settings_dim_spread">Dimming spread</string>
+    <string name="settings_pwm_sensitive">PWM-sensitive mode</string>
+    <string name="settings_min_wait">Min step wait (ms)</string>
+    <string name="settings_max_wait">Max step wait (ms)</string>
+    <string name="settings_scale_transition">Scale transition</string>
     <plurals name="settings_diff_changed">
         <item quantity="one">%1$d setting changed from default (shown in gold)</item>
         <item quantity="other">%1$d settings changed from default (shown in gold)</item>
