@@ -17,11 +17,9 @@ scripts are immutable; the live ledger is `LEDGER_D.md`. **Release standing is N
 here:** the session banner computes it (`scripts/session-facts.sh`, DC-030), settled by hand with
 `git ls-remote --tags --refs origin 'refs/tags/v*'`.
 
-This branch starts the 1.12.0 train from `main` after the 1.11.0 squash (#131), which carried the
-#126/#127 override-attribution work (DC-002…DC-028), the runtime rot audit (DC-042…DC-046), the
-Night Light work (DC-053…DC-058), the proximity-damp parity restore (DC-064) and the closed
-light-stall train (DC-063, DC-065…DC-071, DD-001…DD-007), whose open findings H1 and H2 live in
-DD-003 and DD-002. It adds #134's notification Discard (DD-011) and #133's unclamped curve inputs (DD-012). Device rounds on 1.10.0-debug vc24 are closed, with the 0–4095 conversion path frozen as
+The tree declares 1.13.0 / vc27 and includes Simplified Chinese and app-language selection,
+#134's notification Discard (DD-011), and #133's unclamped curve inputs (DD-012). The light-stall
+findings H1 and H2 remain recorded in DD-003 and DD-002. Device rounds on 1.10.0-debug vc24 are closed, with the 0–4095 conversion path frozen as
 built, and a later build owes its own run (DC-011…DC-013, DC-025…DC-028, DB-083;
 `DEVICE_TEST_SCRIPT.md` §2); no round script is alive (RUNBOOK §6, DB-010), the force-stop
 investigation stays closed (DB-051…DB-060), and Scorecard.dev is a run-once local input.
@@ -48,19 +46,14 @@ investigation stays closed (DB-051…DB-060), and Scorecard.dev is a run-once lo
 > fork, options, recommendation (D-167), dated (DA-006); credential leaks and external-content
 > escalations land here too.
 
-1. **Backlog, not for this train — extract the 29 hardcoded diagnostic-card labels (DC-040).**
-   `WRAPPER_CEILING` in `HardcodedStringCheckTest` freezes them at 29 and may only fall. Settles
-   it: `./gradlew :app:testDebugUnitTest --tests '*HardcodedStringCheck*'` — green means the debt
-   has not grown, not that it is gone.
-
-2. **[2026-09-23] On the next false "manual override" pause, read brightness before pressing
+1. **[2026-09-23] On the next false "manual override" pause, read brightness before pressing
    Resume:** `adb shell settings get system screen_brightness` while Live Debug still shows the
    pause. About 193 means the 12 stuck, so something outside Tideo changed brightness; 241 means a
    dip that reverted by itself, which Tideo paused on because its "settled" value is a re-read
    3 ms later, and fixing that is a settle-window change for you to rule on. Extra Dim is ruled
    out (DC-059…DC-062).
 
-3. **[2026-09-24] Check the proximity change on the phone next time you test a build.** Tideo no
+2. **[2026-09-24] Check the proximity change on the phone next time you test a build.** Tideo no
    longer slows brightness while the top of the phone is covered, which is what Tasker does: its
    ×0.1 only ever changed the displayed α (DC-064). If you would rather keep the old slowing as a
    deliberate difference from Tasker, say so; it is one engine change back. Settles it: run
@@ -68,10 +61,6 @@ investigation stays closed (DB-051…DB-060), and Scorecard.dev is a run-once lo
    Live Debug's "Smoothing α" drops to a tenth.
 
 Open questions: none.
-
-**This train is `1.12.0` on vc26, its ONE bump (owner, 2026-09-28),** for #134 and then #133. Land
-further user-facing fixes by editing `changelogs/26.txt` (500-character cap), never by bumping or by
-creating `27.txt`; re-open only for something major, and say so.
 
 ## Decided non-items
 
@@ -113,6 +102,17 @@ creating `27.txt`; re-open only for something major, and say so.
 
 Newest first; ledger rows are the durable detail.
 
+- 2026-10-04 — User Guide HTML and its WebView background follow the app theme, including changes
+  while the page is open; dark-mode accents and tinted callouts retain the original palette, with
+  corresponding readable gold/green/coral colors in light mode. Robolectric covers both palettes,
+  light-mode contrast and both switch directions; actual device rendering remains unverified.
+- 2026-10-03..04 — Added Simplified Chinese and persistent app-language selection (1.13.0 / vc27),
+  including System default; UI, grant feedback, diagnostics (DC-040), profile lists, notifications
+  and widgets follow the language. Review fixes use one language lookup per notification,
+  profile labels matching all 40 original English entries, with independent Chinese labels where
+  screen wording differs, and refreshed channel names with Android 12/12L storage-race
+  coverage; changelog 26 is unchanged. Translation/picker guidance is documented;
+  compiled launch resources retain AppCompat, with device appearance unverified.
 - 2026-09-28 — **#133: curve inputs persist unclamped wherever Apply accepts them (DD-012); owner
   confirmed on 1.12.0-debug vc26 that a Form1A-40 curve and #133's exact curve (Form1A 28.7353),
   loaded as profiles, survive, the latter after a force-stop.**
