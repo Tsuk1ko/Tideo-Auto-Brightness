@@ -176,3 +176,18 @@
   the screen sat at 2409/4095 while the notification showed the perceived 28: the D-050 floor ignores
   the tier, and the unprivileged overlay that compensates in Tasker is deferred (D-040). The restore
   worked as intended (DD-008); owner: leave as is, grant the permission after a restore.
+
+- DD-014 [cited]: **Personal dark-zone exponent preserves the endpoint (owner, 2026-10-07).**
+  Zone 1 uses `Form1A * sqrt(Zone1End) * (lux / Zone1End)^p`, with `p=0.5` taking the original
+  square-root arithmetic; the shared formula feeds runtime, charts, fitting and the 1000-lux
+  safety warning, while continuity coefficients stay unchanged.
+  The finite-positive `zone1Exponent` setting defaults to 0.5 in old profiles, resets with the
+  curve, appears in the settings diff, and is carried by wizard results into preview and Apply;
+  blank or invalid draft values block Apply and invalid persisted values recover to 0.5 through
+  a field serializer, so an overflowing exponent cannot reset the rest of a profile.
+  Fitting keeps p fixed across regression, candidates, ghost points and diagnostics, rejecting
+  zero-endpoint candidates only for non-default p to avoid division by zero without changing
+  the legacy path.
+  This is an owner-authorized personal departure from Tasker, with no upstream submission;
+  static diff review only, and the new JVM checks were written but not run, with build, ladder
+  and device behavior also unverified at the owner's request.

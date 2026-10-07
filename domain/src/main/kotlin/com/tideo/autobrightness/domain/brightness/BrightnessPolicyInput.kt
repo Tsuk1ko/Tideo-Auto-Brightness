@@ -62,6 +62,7 @@ data class BrightnessCurveConfig(
     // Tasker task661 act10/14: %AAB_ScalingUse gates taper (task548) vs. linear scale+offset branch
     val scalingUse: Boolean = true,
     val scale: Double = 1.0,
+    val zone1Exponent: Double = 0.5,
 )
 
 data class AnimationConfig(

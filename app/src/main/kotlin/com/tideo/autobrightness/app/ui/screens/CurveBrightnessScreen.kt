@@ -72,7 +72,7 @@ fun CurveBrightnessScreen(navController: NavHostController, vm: DraftSettingsVie
             vm.edit { s ->
                 val d = AabSettings()
                 s.copy(
-                    form1A = d.form1A, zone1End = d.zone1End, form2B = d.form2B,
+                    form1A = d.form1A, zone1End = d.zone1End, zone1Exponent = d.zone1Exponent, form2B = d.form2B,
                     form2C = d.form2C, zone2End = d.zone2End,
                 )
             }
@@ -160,6 +160,13 @@ fun CurveBrightnessContent(
                     stringResource(R.string.curve_form1a), draft.form1A, { onEdit { s -> s.copy(form1A = it) } },
                     epoch = epoch, committed = committed.form1A, isInt = false,
                     help = TaskerHelp.FORM_1A, testTag = "field_form1A",
+                )
+                NumberSettingField(
+                    stringResource(R.string.curve_zone1_exponent), draft.zone1Exponent, { onEdit { s -> s.copy(zone1Exponent = it) } },
+                    epoch = epoch, committed = committed.zone1Exponent, isInt = false,
+                    error = if (errors.any { it.field == "zone1Exponent" }) stringResource(R.string.curve_zone1_exponent_error) else null,
+                    help = R.string.help_zone1_exponent, testTag = "field_zone1Exponent",
+                    onInvalidInput = { onEdit { s -> s.copy(zone1Exponent = Double.NaN) } },
                 )
                 NumberSettingField(
                     stringResource(R.string.curve_zone1_end), draft.zone1End, { onEdit { s -> s.copy(zone1End = it.toInt()) } },

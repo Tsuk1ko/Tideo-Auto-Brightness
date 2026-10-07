@@ -53,6 +53,7 @@ private val SETTING_LABELS: Map<String, Int> = mapOf(
     "zone1End" to R.string.curve_zone1_end,
     "zone2End" to R.string.curve_zone2_end,
     "form1A" to R.string.settings_form1a,
+    "zone1Exponent" to R.string.curve_zone1_exponent,
     "form2B" to R.string.settings_form2b,
     "form2C" to R.string.settings_form2c,
     "dimmingEnabled" to R.string.sd_header_super,
@@ -100,6 +101,7 @@ internal fun AabSettings.valueFor(key: String): String = when (key) {
     "zone2End" -> zone2End.toString()
     // G2R-F70: drop ".0" from Doubles (5.0 → "5", 5.833 → "5.833").
     "form1A" -> if (form1A % 1.0 == 0.0) form1A.toInt().toString() else form1A.toString()
+    "zone1Exponent" -> zone1Exponent.toString()
     "form2B" -> form2B.toString()
     "form2C" -> form2C.toString()
     "dimmingEnabled" -> dimmingEnabled.toString()

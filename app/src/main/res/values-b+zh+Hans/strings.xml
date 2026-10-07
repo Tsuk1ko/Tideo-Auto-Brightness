@@ -376,6 +376,9 @@
     <!-- Curve & Brightness -->
     <string name="curve_zones_header">曲线分区</string>
     <string name="curve_form1a">区域 1 缩放系数（form1A）</string>
+    <string name="curve_zone1_exponent">暗部指数（p）</string>
+    <string name="curve_zone1_exponent_error">请输入大于 0 的有限数值。</string>
+    <string name="help_zone1_exponent">0.5 保持原曲线；1 为线性。大于 1 时，亮度前段上升较慢，接近区域 1 终点时上升更快。数值越大，末段越陡，终点亮度不变。</string>
     <string name="curve_zone1_end">区域 1 终点（lux）</string>
     <string name="curve_form2b">区域 2 缩放系数（form2B）</string>
     <string name="curve_form2c">区域 2 偏移量（form2C）</string>

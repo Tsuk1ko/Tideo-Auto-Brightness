@@ -7,6 +7,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.test.runTest
+import kotlinx.serialization.json.Json
 import org.junit.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -24,6 +25,7 @@ class CurveParamFreedomTest {
     }
 
     private val weirdCurves: Map<String, AabSettings> = mapOf(
+        "custom dark-zone exponent" to AabSettings(zone1Exponent = 1.5),
         "issue 133 wizard output" to
             AabSettings(form1A = 28.7353, zone1End = 17, form2B = 0.6759f, form2C = 1, zone2End = 383),
         "steep zone 1 ending at 1 lux, nearly flat zone 2" to
@@ -41,6 +43,35 @@ class CurveParamFreedomTest {
         "zone ends past sunlight" to
             AabSettings(form1A = 1.2, zone1End = 25_000, form2B = 1f, form2C = 18, zone2End = 150_000),
     )
+
+    @Test
+    fun `invalid dark exponents are repaired without resetting other settings`() = runTest {
+        for (value in listOf("1e309", "-1e309", "0", "-1", "null", "\"NaN\"", "\"invalid\"")) {
+            val raw = """{"minBrightness":42,"zone1Exponent":$value}"""
+            val decoded = Json.decodeFromString(AabSettings.serializer(), raw)
+            assertEquals(0.5, decoded.zone1Exponent)
+            assertEquals(42, decoded.minBrightness)
+            val restored = AabSettingsSerializer.readFrom(raw.byteInputStream())
+            assertEquals(decoded, restored)
+        }
+        val legacy = Json.decodeFromString(AabSettings.serializer(), """{"minBrightness":42}""")
+        assertEquals(0.5, legacy.zone1Exponent)
+        assertEquals(42, legacy.minBrightness)
+    }
+
+    @Test
+    fun `invalid draft exponents block Apply and recover on persistence`() {
+        for (value in listOf(0.0, -1.0, Double.NaN, Double.POSITIVE_INFINITY, Double.NEGATIVE_INFINITY)) {
+            val settings = AabSettings(zone1Exponent = value)
+            assertTrue(SettingsValidator.validate(settings).any {
+                it.field == "zone1Exponent" && it.severity == Severity.CRITICAL
+            })
+            assertEquals(0.5, settings.validate().zone1Exponent)
+            assertEquals(0.5, settings.toBrightnessCurveConfig().zone1Exponent)
+        }
+        assertEquals(1.5, AabSettings(zone1Exponent = 1.5).toBrightnessCurveConfig().zone1Exponent)
+        assertEquals(1, AabSettings(zone1Exponent = 1.5).changedCount())
+    }
 
     @Test
     fun `every weird curve is one Apply accepts`() {

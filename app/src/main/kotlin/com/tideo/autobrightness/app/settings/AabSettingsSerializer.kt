@@ -3,7 +3,32 @@ package com.tideo.autobrightness.app.settings
 import androidx.datastore.core.Serializer
 import java.io.InputStream
 import java.io.OutputStream
+import kotlinx.serialization.KSerializer
+import kotlinx.serialization.descriptors.PrimitiveKind
+import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
+import kotlinx.serialization.encoding.Decoder
+import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonDecoder
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.doubleOrNull
+
+// DD-014: repair this field before numeric overflow can reject the rest of a profile.
+object Zone1ExponentSerializer : KSerializer<Double> {
+    override val descriptor = PrimitiveSerialDescriptor("Zone1Exponent", PrimitiveKind.DOUBLE)
+
+    override fun deserialize(decoder: Decoder): Double {
+        val value = if (decoder is JsonDecoder) {
+            (decoder.decodeJsonElement() as? JsonPrimitive)?.doubleOrNull
+        } else {
+            decoder.decodeDouble()
+        }
+        return value?.takeIf { it.isFinite() && it > 0.0 } ?: 0.5
+    }
+
+    override fun serialize(encoder: Encoder, value: Double) =
+        encoder.encodeDouble(value.takeIf { it.isFinite() && it > 0.0 } ?: 0.5)
+}
 
 object AabSettingsSerializer : Serializer<AabSettings> {
     private val json = Json {

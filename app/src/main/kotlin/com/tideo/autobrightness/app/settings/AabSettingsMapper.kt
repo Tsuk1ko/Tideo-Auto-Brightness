@@ -37,6 +37,7 @@ fun AabSettings.toBrightnessCurveConfig(): BrightnessCurveConfig {
     return BrightnessCurveConfig(
         form1A = form1A.toDouble(),
         form2A = coeffs.form2A,
+        zone1Exponent = zone1Exponent.takeIf { it.isFinite() && it > 0.0 } ?: 0.5,
         form2B = form2B.toDouble(),
         form2C = form2C.toDouble(),
         zone1End = zone1End.toDouble(),
@@ -81,6 +82,7 @@ fun AabSettings.validate(): AabSettings {
         zone1End = clampedZone1End,
         zone2End = zone2End.coerceAtLeast(clampedZone1End),
         form1A = form1A.finiteOr(d.form1A).coerceAtLeast(0.0),
+        zone1Exponent = zone1Exponent.takeIf { it.isFinite() && it > 0.0 } ?: d.zone1Exponent,
         form2B = form2B.finiteOr(d.form2B),
         form2C = form2C.coerceAtMost(clampedZone1End),
         // DB-008 (issue #110): clamp SETPOINT to 65 (runtime always clamped; UI/persistence must agree).

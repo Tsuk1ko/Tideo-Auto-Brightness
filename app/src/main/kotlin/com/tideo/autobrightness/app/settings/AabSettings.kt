@@ -16,6 +16,8 @@ data class AabSettings(
     val zone2End: Int = 10_000,
     // G2R-F70: %AAB_Form1A continuous curve coefficient; stored as Double to preserve decimals
     val form1A: Double = 5.0,
+    @Serializable(with = Zone1ExponentSerializer::class)
+    val zone1Exponent: Double = 0.5,
     val form2B: Float = 8.8f,
     val form2C: Int = 18,
     val dimmingEnabled: Boolean = false,
@@ -116,6 +118,7 @@ object AabSettingsContract {
         AabSettingRule("%AAB_Zone1End", "zone1End", AabValueType.Int, "35", ">= 1"),
         AabSettingRule("%AAB_Zone2End", "zone2End", AabValueType.Int, "10000", ">= zone1End"),
         AabSettingRule("%AAB_Form1A", "form1A", AabValueType.Double, "5.0", "finite, >= 0"),
+        AabSettingRule("Tideo:zone1Exponent", "zone1Exponent", AabValueType.Double, "0.5", "finite, > 0"),
         AabSettingRule("%AAB_Form2B", "form2B", AabValueType.Float, "8.8", "finite"),
         AabSettingRule("%AAB_Form2C", "form2C", AabValueType.Int, "18", "<= zone1End"),
         AabSettingRule("%AAB_DimmingEnabled", "dimmingEnabled", AabValueType.Boolean, "false", "must be true|false"),

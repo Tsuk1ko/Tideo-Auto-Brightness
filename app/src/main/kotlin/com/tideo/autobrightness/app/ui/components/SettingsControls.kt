@@ -66,10 +66,10 @@ fun SectionHeader(text: String, divider: Boolean = false) {
 }
 
 private fun formatNumber(value: Number, isInt: Boolean): String =
-    if (isInt) value.toInt().toString() else value.toFloat().toString()
+    if (isInt) value.toInt().toString() else value.toString()
 
 private fun sameNumber(a: Number, b: Number, isInt: Boolean): Boolean =
-    if (isInt) a.toInt() == b.toInt() else a.toFloat() == b.toFloat()
+    if (isInt) a.toInt() == b.toInt() else a.toDouble() == b.toDouble()
 
 /** The "ⓘ" affordance that reveals a control's Tasker long-press help (G2R-F19/F20/F21). Tap = long-tap. D-156: bare glyph with per-field contentDescription. */
 @Composable
@@ -102,6 +102,7 @@ fun NumberSettingField(
     enabled: Boolean = true,
     isInt: Boolean = true,
     testTag: String = label,
+    onInvalidInput: (() -> Unit)? = null,
 ) {
     var text by remember(epoch) { mutableStateOf(formatNumber(value, isInt)) }
     var showHelp by remember { mutableStateOf(false) }
@@ -111,7 +112,7 @@ fun NumberSettingField(
         value = text,
         onValueChange = { raw ->
             text = raw
-            raw.trim().replace(',', '.').toDoubleOrNull()?.let(onCommit)
+            raw.trim().replace(',', '.').toDoubleOrNull()?.let(onCommit) ?: onInvalidInput?.invoke()
         },
         label = { Text(label + bracket) },
         enabled = enabled,

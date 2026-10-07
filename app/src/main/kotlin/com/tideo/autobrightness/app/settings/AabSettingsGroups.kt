@@ -19,6 +19,8 @@ data class CurveParams(
     val form1A: Double,
     val form2B: Float,
     val form2C: Int,
+    @Serializable(with = Zone1ExponentSerializer::class)
+    val zone1Exponent: Double = 0.5,
 )
 
 @Serializable
@@ -80,7 +82,7 @@ val AabSettings.bounds: BrightnessBounds
     get() = BrightnessBounds(minBrightness, maxBrightness, offset, scale)
 
 val AabSettings.curve: CurveParams
-    get() = CurveParams(zone1End, zone2End, form1A, form2B, form2C)
+    get() = CurveParams(zone1End, zone2End, form1A, form2B, form2C, zone1Exponent)
 
 val AabSettings.dimming: DimmingConfig
     get() = DimmingConfig(dimmingEnabled, dimmingStrength, dimmingExponent, dimmingThreshold, dimSpread, pwmSensitive, pwmExponent)

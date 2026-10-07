@@ -1,11 +1,13 @@
 package com.tideo.autobrightness.app.ui
 
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -13,6 +15,8 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performTextClearance
+import androidx.compose.ui.test.performTextReplacement
 import androidx.compose.ui.unit.dp
 import com.tideo.autobrightness.app.runtime.PipelineState
 import com.tideo.autobrightness.app.settings.AabSettings
@@ -56,6 +60,31 @@ class SettingsScreensTest {
 
     @get:Rule
     val compose = createComposeRule()
+
+    @Test
+    fun curveBrightness_unparseableExponent_blocksApply_untilCorrected() {
+        val committed = AabSettings()
+        val draft = mutableStateOf(committed.copy(zone1Exponent = 2.0))
+        compose.setContent {
+            MaterialTheme {
+                val errors = SettingsValidator.validate(draft.value)
+                CurveBrightnessContent(
+                    draft.value, committed, errors, epoch = 0, dirty = draft.value != committed,
+                    onEdit = { draft.value = it(draft.value) }, onApply = {}, onDiscard = {}, onBack = {},
+                    criticalError = errors.any { it.severity == com.tideo.autobrightness.app.settings.Severity.CRITICAL },
+                )
+            }
+        }
+        val field = compose.onNodeWithTag("field_zone1Exponent")
+        field.performScrollTo().performTextClearance()
+        compose.onNodeWithTag("apply_settings").assertIsNotEnabled()
+        assertTrue(draft.value.zone1Exponent.isNaN())
+        field.performTextReplacement(".")
+        compose.onNodeWithTag("apply_settings").assertIsNotEnabled()
+        field.performTextReplacement("1.5")
+        compose.onNodeWithTag("apply_settings").assertIsEnabled()
+        assertEquals(1.5, draft.value.zone1Exponent)
+    }
 
     @Test
     fun curveBrightness_invalidForm2C_rendersValidatorError() {

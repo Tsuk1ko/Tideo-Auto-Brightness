@@ -411,6 +411,9 @@
     <!-- Curve &amp; Brightness -->
     <string name="curve_zones_header">Curve zones</string>
     <string name="curve_form1a">Zone 1 scaling (form1A)</string>
+    <string name="curve_zone1_exponent">Dark-zone exponent (p)</string>
+    <string name="curve_zone1_exponent_error">Enter a finite number greater than 0.</string>
+    <string name="help_zone1_exponent">0.5 keeps the original curve; 1 is linear. Above 1, brightness rises slowly at first and faster near the zone 1 end. Higher values make the end steeper without changing its brightness.</string>
     <string name="curve_zone1_end">Zone 1 end (lux)</string>
     <string name="curve_form2b">Zone 2 scaling (form2B)</string>
     <string name="curve_form2c">Zone 2 offset (form2C)</string>

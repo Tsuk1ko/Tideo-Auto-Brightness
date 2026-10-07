@@ -118,6 +118,7 @@ fun ToolsScreen(
                 val cfg = CurveSuggestionEngine.applyToLiveCurve(result, s.toBrightnessCurveConfig())
                 s.copy(
                     form1A = cfg.form1A,
+                    zone1Exponent = cfg.zone1Exponent,
                     zone1End = Math.round(cfg.zone1End).toInt(),
                     form2B = cfg.form2B.toFloat(),
                     form2C = Math.round(cfg.form2C).toInt(),
@@ -138,6 +139,7 @@ fun ToolsScreen(
                 // G2R-F70: form1A (Double) lands exactly; Int fields round. DD-012: memory = disk.
                 s.copy(
                     form1A = cfg.form1A,
+                    zone1Exponent = cfg.zone1Exponent,
                     zone1End = Math.round(cfg.zone1End).toInt(),
                     form2B = cfg.form2B.toFloat(),
                     form2C = Math.round(cfg.form2C).toInt(),

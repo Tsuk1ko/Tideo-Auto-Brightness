@@ -24,6 +24,9 @@ built, and a later build owes its own run (DC-011…DC-013, DC-025…DC-028, DB-
 `DEVICE_TEST_SCRIPT.md` §2); no round script is alive (RUNBOOK §6, DB-010), the force-stop
 investigation stays closed (DB-051…DB-060), and Scorecard.dev is a run-once local input.
 
+The personal curve variant adds a fixed, user-set dark-zone exponent, default 0.5; runtime,
+graphs and fitting share its formula, with tests/build/device behavior unverified (DD-014).
+
 ## Active work
 
 - **Real-device E2E suite** — `docs/plans/DEVICE_E2E_PLAN.md` (owner-approved 2026-09-13): S0
@@ -102,6 +105,10 @@ Open questions: none.
 
 Newest first; ledger rows are the durable detail.
 
+- 2026-10-07 — Dark-zone exponent help in both languages describes effects without suggesting
+  tuning values; static diff review only, with tests/build/ladder still skipped by owner.
+- 2026-10-07 — Personal dark-zone exponent and fixed-p fitting added (DD-014); existing curves
+  retain p=0.5. Static diff review only; tests, build, ladder and device checks skipped by owner.
 - 2026-10-04 — User Guide HTML and its WebView background follow the app theme, including changes
   while the page is open; dark-mode accents and tinted callouts retain the original palette, with
   corresponding readable gold/green/coral colors in light mode. Robolectric covers both palettes,

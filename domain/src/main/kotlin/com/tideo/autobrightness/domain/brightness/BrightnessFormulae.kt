@@ -8,6 +8,11 @@ import kotlin.math.sqrt
 object BrightnessFormulae {
     data class ContinuityCoefficients(val form2A: Double, val form3A: Double)
 
+    // DD-014: shape changes preserve the zone-1 endpoint; 0.5 retains the original arithmetic.
+    fun zone1Brightness(lux: Double, form1A: Double, zone1End: Double, exponent: Double): Double =
+        if (exponent == 0.5) form1A * sqrt(lux)
+        else form1A * sqrt(zone1End) * (lux / zone1End).pow(exponent)
+
     fun deriveContinuityCoefficients(
         form1A: Double,
         form2B: Double,

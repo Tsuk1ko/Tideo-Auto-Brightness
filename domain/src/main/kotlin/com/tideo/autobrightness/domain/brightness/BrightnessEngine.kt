@@ -10,7 +10,6 @@ import kotlin.math.log10
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.pow
-import kotlin.math.sqrt
 
 /*
  * ROUNDING-MODE CONTRACT: Tideo reproduces three DISTINCT rounding idioms from the source project for bit-for-bit identity to golden vectors (D-028/D-030):
@@ -213,7 +212,7 @@ class BrightnessEngine {
     fun mapLuxToBrightness(smoothedLux: Double, cfg: BrightnessCurveConfig): Double {
         // Tasker task661: NO coerceAtLeast on ^0.33 bases, NO clamp to [min,max] here (D-010(b)).
         return when {
-            smoothedLux < cfg.zone1End -> cfg.form1A * sqrt(smoothedLux)
+            smoothedLux < cfg.zone1End -> BrightnessFormulae.zone1Brightness(smoothedLux, cfg.form1A, cfg.zone1End, cfg.zone1Exponent)
             smoothedLux < cfg.zone2End -> cfg.form2A + cfg.form2B * (
                 (smoothedLux - cfg.form2C).pow(0.33) -
                     (cfg.zone1End - cfg.form2C).pow(0.33)

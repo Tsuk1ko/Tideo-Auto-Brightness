@@ -1,6 +1,7 @@
 package com.tideo.autobrightness.domain.wizard
 
 import com.tideo.autobrightness.domain.brightness.BrightnessCurveConfig
+import com.tideo.autobrightness.domain.brightness.BrightnessFormulae
 import java.util.Locale
 import kotlin.math.*
 
@@ -35,6 +36,7 @@ data class CurveSuggestionResult(
     val form3a: String,
     val diagnosticsLog: String,
     val qualityLines: List<String>,
+    val zone1Exponent: Double = 0.5,
 )
 
 /** AAB Curve Fitting Engine V43.8 (Confidence Fix). Pure-domain, deterministic.
@@ -50,6 +52,8 @@ object CurveSuggestionEngine {
     fun suggest(input: CurveSuggestionInput): CurveSuggestionResult? {
         val log = StringBuilder("--- Engine V43.8 (Confidence Fix) ---\n")
         val cur = input.currentCurve
+        val zone1Exponent = cur.zone1Exponent
+        if (!zone1Exponent.isFinite() || zone1Exponent <= 0.0) return null
         val maxBright = cur.maxBrightness.toDouble()
         val currentForm1a = cur.form1A
         val currentForm2a = cur.form2A
@@ -60,6 +64,9 @@ object CurveSuggestionEngine {
         val currentZone2end = cur.zone2End
 
         log.append("[Input Parameters]\n")
+        if (zone1Exponent != 0.5) {
+            log.append(String.format(Locale.US, "  Zone1Exponent (fixed): %.3f\n", zone1Exponent))
+        }
         log.append(String.format(Locale.US, "  Form1a (current): %.3f\n", currentForm1a))
         log.append(String.format(Locale.US, "  Form2a (current): %.3f\n", currentForm2a))
         log.append(String.format(Locale.US, "  Form2b (current): %.3f\n", currentForm2b))
@@ -104,7 +111,7 @@ object CurveSuggestionEngine {
             if (!binsFilled[i]) {
                 val gLux = ghostLuxes[i]
                 var gBright = when {
-                    gLux <= currentZone1end -> currentForm1a * sqrt(gLux)
+                    gLux <= currentZone1end -> BrightnessFormulae.zone1Brightness(gLux, currentForm1a, currentZone1end, zone1Exponent)
                     gLux <= currentZone2end ->
                         currentForm2a + currentForm2b * (safePowDelta(gLux - currentForm2c, 0.33) - curTermD)
                     else -> maxBright - (curForm3a / gLux) * maxBright
@@ -147,7 +154,7 @@ object CurveSuggestionEngine {
         var bestZ1Nrmse = 0.0; var bestZ2Nrmse = 0.0; var bestZ3Nrmse = 0.0
         var bestZ1Bias = 0.0; var bestZ2Bias = 0.0; var bestZ3Bias = 0.0
 
-        val currentFit = calculateFitAndCost(currentZone1end, currentZone2end, dataPoints, n, currentForm2b, currentForm2c, maxBright)
+        val currentFit = calculateFitAndCost(currentZone1end, currentZone2end, dataPoints, n, currentForm2b, currentForm2c, maxBright, zone1Exponent)
         if (currentFit[0] < 1e11) {
             globalBestCost = currentFit[0]
             bestZ1End = currentFit[1]; bestZ2End = currentFit[2]
@@ -172,8 +179,8 @@ object CurveSuggestionEngine {
             val z1Pts = dataPoints.subList(0, i + 1)
             val z2Pts = dataPoints.subList(i + 1, n)
             if (z1Pts.size < 3 || z2Pts.size < 3) continue
-            val fitZ1 = fitZone1(z1Pts); val r2Z1Temp = fitZ1[1]
             val tempForm2d = z1Pts.last()[0]
+            val fitZ1 = fitZone1(z1Pts, tempForm2d, zone1Exponent); val r2Z1Temp = fitZ1[1]
             val r2Z2Temp = getR2Z2Only(z2Pts, currentForm2c, tempForm2d, currentForm2a, currentForm2b)
             val penalty = if (z1Pts.size < 4) 0.2 else 0.0
             val combinedScore = r2Z1Temp + r2Z2Temp - penalty
@@ -223,8 +230,8 @@ object CurveSuggestionEngine {
                 val idx90 = minOf((remaining.size * 0.90).toInt(), remaining.size - 2)
                 val testZ2e75 = remaining[idx75][0]
                 val testZ2e90 = remaining[idx90][0]
-                val cost75 = approximateCost(candZ1End, testZ2e75, dataPoints, n, currentForm1a, currentForm2b, currentForm2c, maxBright)
-                val cost90 = approximateCost(candZ1End, testZ2e90, dataPoints, n, currentForm1a, currentForm2b, currentForm2c, maxBright)
+                val cost75 = approximateCost(candZ1End, testZ2e75, dataPoints, n, currentForm1a, currentForm2b, currentForm2c, maxBright, zone1Exponent)
+                val cost90 = approximateCost(candZ1End, testZ2e90, dataPoints, n, currentForm1a, currentForm2b, currentForm2c, maxBright, zone1Exponent)
                 if (cost75 < bestZ2InitCost) { bestZ2InitCost = cost75; candZ2End = testZ2e75 }
                 if (cost90 < bestZ2InitCost) { bestZ2InitCost = cost90; candZ2End = testZ2e90 }
             }
@@ -234,7 +241,7 @@ object CurveSuggestionEngine {
             while (j < remaining.size - 2) {
                 val testZ2e = remaining[j][0]
                 if (testZ2e > candZ1End + 2.0) {
-                    val testCost = approximateCost(candZ1End, testZ2e, dataPoints, n, currentForm1a, currentForm2b, currentForm2c, maxBright)
+                    val testCost = approximateCost(candZ1End, testZ2e, dataPoints, n, currentForm1a, currentForm2b, currentForm2c, maxBright, zone1Exponent)
                     if (testCost < bestZ2InitCost) { bestZ2InitCost = testCost; candZ2End = testZ2e }
                 }
                 j += step
@@ -242,7 +249,7 @@ object CurveSuggestionEngine {
 
             log.append(String.format(Locale.US, " -> Cand(k=%d): Z1e=%.2f, Initial Z2e Split=%.1f\n", k, candZ1End, candZ2End))
 
-            var kBestResults = calculateFitAndCost(candZ1End, candZ2End, dataPoints, n, currentForm2b, currentForm2c, maxBright)
+            var kBestResults = calculateFitAndCost(candZ1End, candZ2End, dataPoints, n, currentForm2b, currentForm2c, maxBright, zone1Exponent)
             if (kBestResults[0] > 1e11) continue
             var kBestCost = kBestResults[0]
 
@@ -269,13 +276,13 @@ object CurveSuggestionEngine {
                     var bestApproxCostZ1 = 1e12; var bestApproxZ1e = kBestResults[1]
                     for (candZ1 in z1Candidates) {
                         if (candZ1 >= kBestResults[2] - 1.0) continue
-                        val ac = approximateCost(candZ1, kBestResults[2], dataPoints, n, kBestResults[3], kBestResults[5], kBestResults[6], maxBright)
+                        val ac = approximateCost(candZ1, kBestResults[2], dataPoints, n, kBestResults[3], kBestResults[5], kBestResults[6], maxBright, zone1Exponent)
                         if (ac < bestApproxCostZ1) { bestApproxCostZ1 = ac; bestApproxZ1e = candZ1 }
                     }
 
                     val hopThreshold = maxOf(0.5, kBestResults[1] * 0.005)
                     if (abs(bestApproxZ1e - kBestResults[1]) > hopThreshold) {
-                        val z1RefineResults = calculateFitAndCost(bestApproxZ1e, kBestResults[2], dataPoints, n, kBestResults[5], kBestResults[6], maxBright)
+                        val z1RefineResults = calculateFitAndCost(bestApproxZ1e, kBestResults[2], dataPoints, n, kBestResults[5], kBestResults[6], maxBright, zone1Exponent)
                         if (z1RefineResults[0] < kBestCost) {
                             kBestCost = z1RefineResults[0]; kBestResults = z1RefineResults; hopped = true; hopCount++
                             log.append(String.format(Locale.US, "    [Pass %d] * Z1 Hopped to %.2f (Cost: %.4f)\n", iterPass + 1, kBestResults[1], kBestCost))
@@ -297,12 +304,12 @@ object CurveSuggestionEngine {
                     var bestApproxCostZ2 = 1e12; var bestApproxZ2e = kBestResults[2]
                     for (candZ2 in z2Candidates) {
                         if (candZ2 <= kBestResults[1] + 5.0) continue
-                        val ac = approximateCost(kBestResults[1], candZ2, dataPoints, n, kBestResults[3], kBestResults[5], kBestResults[6], maxBright)
+                        val ac = approximateCost(kBestResults[1], candZ2, dataPoints, n, kBestResults[3], kBestResults[5], kBestResults[6], maxBright, zone1Exponent)
                         if (ac < bestApproxCostZ2) { bestApproxCostZ2 = ac; bestApproxZ2e = candZ2 }
                     }
 
                     if (abs(bestApproxZ2e - kBestResults[2]) > 1.0) {
-                        val z2RefineResults = calculateFitAndCost(kBestResults[1], bestApproxZ2e, dataPoints, n, kBestResults[5], kBestResults[6], maxBright)
+                        val z2RefineResults = calculateFitAndCost(kBestResults[1], bestApproxZ2e, dataPoints, n, kBestResults[5], kBestResults[6], maxBright, zone1Exponent)
                         if (z2RefineResults[0] < kBestCost) {
                             kBestCost = z2RefineResults[0]; kBestResults = z2RefineResults
                             log.append(String.format(Locale.US, "    * Z2 Hopped to %.2f (Cost: %.4f)\n", kBestResults[2], kBestCost))
@@ -381,9 +388,9 @@ object CurveSuggestionEngine {
                 else -> finalZ3.add(pt)
             }
         }
-        val fz1 = evaluateMetrics(1, finalZ1, maxBright, bestForm1a, 0.0, 0.0, 0.0)
-        val fz2 = evaluateMetrics(2, finalZ2, maxBright, bestForm2a, bestForm2b, bestForm2c, bestZ1End)
-        val fz3 = evaluateMetrics(3, finalZ3, maxBright, bestForm3a, 0.0, 0.0, 0.0)
+        val fz1 = evaluateMetrics(1, finalZ1, maxBright, bestForm1a, 0.0, 0.0, bestZ1End, zone1Exponent)
+        val fz2 = evaluateMetrics(2, finalZ2, maxBright, bestForm2a, bestForm2b, bestForm2c, bestZ1End, zone1Exponent)
+        val fz3 = evaluateMetrics(3, finalZ3, maxBright, bestForm3a, 0.0, 0.0, 0.0, zone1Exponent)
         bestR2Z1 = fz1[0]; bestZ1Nrmse = fz1[1]; bestZ1Bias = fz1[2]
         bestR2Z2 = fz2[0]; bestZ2Nrmse = fz2[1]; bestZ2Bias = fz2[2]
         bestR2Z3 = fz3[0]; bestZ3Nrmse = fz3[1]; bestZ3Bias = fz3[2]
@@ -395,12 +402,12 @@ object CurveSuggestionEngine {
             var baseSqErr = 0.0
             for (pt in dataPoints) {
                 val w = getLogWeight(pt)
-                val yCurve = evalCurve(pt[0], bestForm1a, bestForm2a, bestForm2b, bestForm2c, bestZ1End, bestZ2End, bestForm3a, maxBright, termDZ2)
+                val yCurve = evalCurve(pt[0], bestForm1a, bestForm2a, bestForm2b, bestForm2c, bestZ1End, bestZ2End, bestForm3a, maxBright, termDZ2, zone1Exponent)
                 baseSqErr += w * (yCurve - pt[1]).pow(2.0)
             }
             for (pt in dataPoints) {
                 val w = getLogWeight(pt)
-                val yCurve = evalCurve(pt[0], bestForm1a, bestForm2a, bestForm2b, bestForm2c, bestZ1End, bestZ2End, bestForm3a, maxBright, termDZ2)
+                val yCurve = evalCurve(pt[0], bestForm1a, bestForm2a, bestForm2b, bestForm2c, bestZ1End, bestZ2End, bestForm3a, maxBright, termDZ2, zone1Exponent)
                 val errContrib = w * (yCurve - pt[1]).pow(2.0)
                 val impact = errContrib / (baseSqErr + 1e-9)
                 if (impact > maxImpact) maxImpact = impact
@@ -414,7 +421,10 @@ object CurveSuggestionEngine {
         log.append(String.format(Locale.US, "  Zone1End: %.2f (lux)\n", bestZ1End))
         log.append(String.format(Locale.US, "  Zone2End: %.2f (lux)\n\n", bestZ2End))
         log.append("[Curve Parameters]\n")
-        log.append(String.format(Locale.US, "  Form1a (sqrt scale): %.4f\n", bestForm1a))
+        log.append(String.format(Locale.US,
+            if (zone1Exponent == 0.5) "  Form1a (sqrt scale): %.4f\n" else "  Form1a (endpoint scale): %.4f\n",
+            bestForm1a,
+        ))
         log.append(String.format(Locale.US, "  Form2a (align): %.4f\n", bestForm2a))
         log.append(String.format(Locale.US, "  Form2b (scale): %.4f\n", bestForm2b))
         log.append(String.format(Locale.US, "  Form2c (offset): %.4f\n", bestForm2c))
@@ -468,6 +478,7 @@ object CurveSuggestionEngine {
             form3a = String.format(Locale.US, "%.3f", bestForm3a),
             diagnosticsLog = log.toString(),
             qualityLines = listOf(overallLine, z1Line, z2Line, z3Line),
+            zone1Exponent = zone1Exponent,
         )
     }
 
@@ -490,6 +501,7 @@ object CurveSuggestionEngine {
 
         return current.copy(
             form1A = form1a,
+            zone1Exponent = suggestion.zone1Exponent,
             zone1End = zone1End,
             form2A = form2a,
             form2B = form2b,
@@ -543,7 +555,7 @@ object CurveSuggestionEngine {
         return points
     }
 
-    private fun evaluateMetrics(zone: Int, points: List<DoubleArray>, maxBright: Double, fA: Double, fB: Double, fC: Double, z1e: Double): DoubleArray {
+    private fun evaluateMetrics(zone: Int, points: List<DoubleArray>, maxBright: Double, fA: Double, fB: Double, fC: Double, z1e: Double, zone1Exponent: Double): DoubleArray {
         val res = doubleArrayOf(-2.0, 0.0, 0.0)
         if (points.isEmpty()) return res
         var sumW = 0.0; var sumWy = 0.0
@@ -555,7 +567,7 @@ object CurveSuggestionEngine {
         for (pt in points) {
             val w = getLogWeight(pt); val y = pt[1]
             val yPred = when (zone) {
-                1 -> fA * sqrt(pt[0])
+                1 -> BrightnessFormulae.zone1Brightness(pt[0], fA, z1e, zone1Exponent)
                 2 -> { if (pt[0] <= fC) continue; fA + fB * (safePowDelta(pt[0] - fC, 0.33) - termD2) }
                 else -> maxBright - (fA / pt[0]) * maxBright
             }
@@ -571,18 +583,18 @@ object CurveSuggestionEngine {
         return res
     }
 
-    private fun fitZone1(points: List<DoubleArray>): DoubleArray {
+    private fun fitZone1(points: List<DoubleArray>, z1e: Double, zone1Exponent: Double): DoubleArray {
         val result = doubleArrayOf(0.0, -2.0)
-        if (points.size < 3) return result
+        if (points.size < 3 || (zone1Exponent != 0.5 && z1e <= 0.0)) return result
         var sumWy = 0.0; var sumW = 0.0
         for (pt in points) { val w = getLogWeight(pt); sumWy += w * pt[1]; sumW += w }
         val meanYW = if (sumW > 1e-9) sumWy / sumW else 0.0
         var sumWxy = 0.0; var sumWxx = 0.0
-        for (pt in points) { val w = getLogWeight(pt); val xp = sqrt(pt[0]); sumWxy += w * xp * pt[1]; sumWxx += w * xp * xp }
+        for (pt in points) { val w = getLogWeight(pt); val xp = BrightnessFormulae.zone1Brightness(pt[0], 1.0, z1e, zone1Exponent); sumWxy += w * xp * pt[1]; sumWxx += w * xp * xp }
         val paramA = if (sumWxx > 1e-9) sumWxy / sumWxx else 0.0
         result[0] = paramA
         var ssTotW = 0.0; var ssResW = 0.0
-        for (pt in points) { val w = getLogWeight(pt); val yPred = paramA * sqrt(pt[0]); ssTotW += w * (pt[1] - meanYW).pow(2.0); ssResW += w * (pt[1] - yPred).pow(2.0) }
+        for (pt in points) { val w = getLogWeight(pt); val yPred = BrightnessFormulae.zone1Brightness(pt[0], paramA, z1e, zone1Exponent); ssTotW += w * (pt[1] - meanYW).pow(2.0); ssResW += w * (pt[1] - yPred).pow(2.0) }
         result[1] = if (ssTotW < 1e-9) 0.0 else 1.0 - ssResW / ssTotW
         return result
     }
@@ -617,8 +629,8 @@ object CurveSuggestionEngine {
         return count * (0.25 + 0.75 * r2Safe * (1.0 - errPen))
     }
 
-    private fun approximateCost(z1e: Double, z2e: Double, dataPoints: List<DoubleArray>, n: Int, form1a: Double, oldForm2b: Double, form2c: Double, maxBright: Double): Double {
-        if (z1e >= z2e) return 1e12
+    private fun approximateCost(z1e: Double, z2e: Double, dataPoints: List<DoubleArray>, n: Int, form1a: Double, oldForm2b: Double, form2c: Double, maxBright: Double, zone1Exponent: Double): Double {
+        if (z1e >= z2e || (zone1Exponent != 0.5 && z1e <= 0.0)) return 1e12
         val z1Pts = dataPoints.filter { it[0] <= z1e }
         val z2Pts = dataPoints.filter { it[0] > z1e && it[0] <= z2e }
         val z3Pts = dataPoints.filter { it[0] > z2e }
@@ -637,26 +649,26 @@ object CurveSuggestionEngine {
         val boundaryY2End = approxForm2a + bestB * (safePowDelta(z2e - form2c, 0.33) - termD)
         if (boundaryY2End > maxBright) return 1e12
         val approxForm3a = if (maxBright > 0.01) maxOf(0.0, z2e * (maxBright - boundaryY2End) / maxBright) else 0.0
-        val ev1 = evaluateMetrics(1, z1Pts, maxBright, form1a, 0.0, 0.0, 0.0)
-        val ev2 = evaluateMetrics(2, z2Pts, maxBright, approxForm2a, bestB, form2c, z1e)
+        val ev1 = evaluateMetrics(1, z1Pts, maxBright, form1a, 0.0, 0.0, z1e, zone1Exponent)
+        val ev2 = evaluateMetrics(2, z2Pts, maxBright, approxForm2a, bestB, form2c, z1e, zone1Exponent)
         val z1Nrmse = ev1[1]; val z1Bias = ev1[2]; val z2Nrmse = ev2[1]; val z2Bias = ev2[2]
         val z3Nrmse: Double; val z3Bias: Double
-        if (z3Pts.size >= 2) { val ev3 = evaluateMetrics(3, z3Pts, maxBright, approxForm3a, 0.0, 0.0, 0.0); z3Nrmse = ev3[1]; z3Bias = ev3[2] } else { z3Nrmse = 0.0; z3Bias = 0.0 }
+        if (z3Pts.size >= 2) { val ev3 = evaluateMetrics(3, z3Pts, maxBright, approxForm3a, 0.0, 0.0, 0.0, zone1Exponent); z3Nrmse = ev3[1]; z3Bias = ev3[2] } else { z3Nrmse = 0.0; z3Bias = 0.0 }
         val sizeP = calculateSizePenalty(z1Pts.size) + calculateSizePenalty(z2Pts.size) + calculateSizePenalty(z3Pts.size)
         val regP = 0.001 * bestB * bestB + 0.0005 * abs(form2c)
         return 50.0 * (z1Nrmse + z2Nrmse + z3Nrmse) + (abs(z1Bias) + abs(z2Bias) + abs(z3Bias)) + sizeP + regP
     }
 
-    private fun calculateFitAndCost(z1e: Double, z2e: Double, dataPoints: List<DoubleArray>, n: Int, currentForm2b: Double, currentForm2c: Double, maxBright: Double): DoubleArray {
+    private fun calculateFitAndCost(z1e: Double, z2e: Double, dataPoints: List<DoubleArray>, n: Int, currentForm2b: Double, currentForm2c: Double, maxBright: Double, zone1Exponent: Double): DoubleArray {
         val results = DoubleArray(18) { 0.0 }; results[0] = 1e12
-        if (z1e >= z2e || z1e < 0) return results
+        if (z1e >= z2e || z1e < 0 || (zone1Exponent != 0.5 && z1e == 0.0)) return results
         val z1Pts: MutableList<DoubleArray> = mutableListOf()
         val z2Pts: MutableList<DoubleArray> = mutableListOf()
         val z3Pts: MutableList<DoubleArray> = mutableListOf()
         for (pt in dataPoints) when { pt[0] <= z1e -> z1Pts.add(pt); pt[0] <= z2e -> z2Pts.add(pt); else -> z3Pts.add(pt) }
         if (z1Pts.size < 3 || z2Pts.size < 3) return results
 
-        val fitZ1Final = fitZone1(z1Pts); val candForm1a = fitZ1Final[0]; val candR2Z1 = fitZ1Final[1]
+        val fitZ1Final = fitZone1(z1Pts, z1e, zone1Exponent); val candForm1a = fitZ1Final[0]; val candR2Z1 = fitZ1Final[1]
         var b = currentForm2b; var c = currentForm2c; if (c < -50.0) c = -50.0
         val candForm2a = candForm1a * sqrt(z1e); val form2d = z1e
         var lrC = 0.2; var prevC = c
@@ -699,9 +711,9 @@ object CurveSuggestionEngine {
         if (candForm3a < 0.0) candForm3a = 0.0
 
         var z1Nrmse = 0.0; var z1Bias = 0.0; var z2Nrmse = 0.0; var z2Bias = 0.0; var z3Nrmse = 0.0; var z3Bias = 0.0; var candR2Z3 = -2.0
-        if (z1Pts.isNotEmpty()) { val ev1 = evaluateMetrics(1, z1Pts, maxBright, candForm1a, 0.0, 0.0, 0.0); z1Nrmse = ev1[1]; z1Bias = ev1[2] }
-        if (z2Pts.isNotEmpty()) { val ev2 = evaluateMetrics(2, z2Pts, maxBright, candForm2a, candForm2b, candForm2c, z1e); z2Nrmse = ev2[1]; z2Bias = ev2[2] }
-        if (z3Pts.isNotEmpty()) { val ev3 = evaluateMetrics(3, z3Pts, maxBright, candForm3a, 0.0, 0.0, 0.0); candR2Z3 = ev3[0]; z3Nrmse = ev3[1]; z3Bias = ev3[2] }
+        if (z1Pts.isNotEmpty()) { val ev1 = evaluateMetrics(1, z1Pts, maxBright, candForm1a, 0.0, 0.0, z1e, zone1Exponent); z1Nrmse = ev1[1]; z1Bias = ev1[2] }
+        if (z2Pts.isNotEmpty()) { val ev2 = evaluateMetrics(2, z2Pts, maxBright, candForm2a, candForm2b, candForm2c, z1e, zone1Exponent); z2Nrmse = ev2[1]; z2Bias = ev2[2] }
+        if (z3Pts.isNotEmpty()) { val ev3 = evaluateMetrics(3, z3Pts, maxBright, candForm3a, 0.0, 0.0, 0.0, zone1Exponent); candR2Z3 = ev3[0]; z3Nrmse = ev3[1]; z3Bias = ev3[2] }
 
         val sizeP = calculateSizePenalty(z1Pts.size) + calculateSizePenalty(z2Pts.size) + calculateSizePenalty(z3Pts.size)
         val regP = 0.001 * candForm2b * candForm2b + 0.0005 * abs(candForm2c)
@@ -722,8 +734,8 @@ object CurveSuggestionEngine {
         return results
     }
 
-    private fun evalCurve(lux: Double, f1a: Double, f2a: Double, f2b: Double, f2c: Double, z1e: Double, z2e: Double, f3a: Double, maxBright: Double, termDZ2: Double): Double = when {
-        lux <= z1e -> f1a * sqrt(lux)
+    private fun evalCurve(lux: Double, f1a: Double, f2a: Double, f2b: Double, f2c: Double, z1e: Double, z2e: Double, f3a: Double, maxBright: Double, termDZ2: Double, zone1Exponent: Double): Double = when {
+        lux <= z1e -> BrightnessFormulae.zone1Brightness(lux, f1a, z1e, zone1Exponent)
         lux <= z2e -> f2a + f2b * (safePowDelta(lux - f2c, 0.33) - termDZ2)
         else -> maxBright - (f3a / lux) * maxBright
     }

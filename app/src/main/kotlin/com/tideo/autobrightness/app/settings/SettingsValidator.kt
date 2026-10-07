@@ -3,7 +3,6 @@ package com.tideo.autobrightness.app.settings
 import com.tideo.autobrightness.domain.brightness.BrightnessFormulae
 import kotlin.math.ceil
 import kotlin.math.pow
-import kotlin.math.sqrt
 
 /** Severity of a [FieldError]. CRITICAL errors block Apply (S12.6d, G2R-F18); ADVISORY only warn. */
 enum class Severity { CRITICAL, ADVISORY }
@@ -35,6 +34,10 @@ object SettingsValidator {
 
     fun validate(settings: AabSettings): List<FieldError> {
         val errors = mutableListOf<FieldError>()
+
+        if (!settings.zone1Exponent.isFinite() || settings.zone1Exponent <= 0.0) {
+            errors += FieldError("zone1Exponent", "Dark-zone exponent must be a finite positive number.", Severity.CRITICAL)
+        }
 
         val maxBright = settings.maxBrightness.toDouble()
 
@@ -158,8 +161,7 @@ object SettingsValidator {
         // %aab_form2d = zone1End (derived coefficient form2D = zone1End, defaults_audit)
         val safeVal: Double = when {
             settings.zone1End > 1000 -> {
-                // Zone 1: form1A * sqrt(1000)
-                settings.form1A.toDouble() * sqrt(1000.0)
+                BrightnessFormulae.zone1Brightness(1000.0, settings.form1A, settings.zone1End.toDouble(), settings.zone1Exponent)
             }
             settings.zone2End > 1000 -> {
                 // Zone 2: form2A + form2B * ((1000-form2C)^0.33 - (form2D-form2C)^0.33)
