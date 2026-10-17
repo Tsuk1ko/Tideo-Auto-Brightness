@@ -10,17 +10,21 @@ import com.tideo.autobrightness.app.runtime.ControllerHookHolder
 import com.tideo.autobrightness.app.runtime.LiveRuntimeState
 import com.tideo.autobrightness.app.runtime.DebugSink
 import com.tideo.autobrightness.app.runtime.DisplayTogglesCoordinator
+import com.tideo.autobrightness.app.runtime.HighBrightnessUpdates
+import com.tideo.autobrightness.app.runtime.StoredDisplayCalibrationSink
 import com.tideo.autobrightness.app.runtime.NightLightTemperatureRoute
 import com.tideo.autobrightness.app.runtime.OverridePointSink
 import com.tideo.autobrightness.app.runtime.SuperDimmingCoordinator
 import com.tideo.autobrightness.app.runtime.ToastContextLoadSink
 import com.tideo.autobrightness.app.runtime.ToastDebugSink
+import com.tideo.autobrightness.app.runtime.ToastHandoffSink
 import com.tideo.autobrightness.app.runtime.CircadianScaleRefresh
 import com.tideo.autobrightness.app.runtime.CircadianWindowProvider
 import com.tideo.autobrightness.app.runtime.liveDynamicScale
 import com.tideo.autobrightness.app.settings.AabSettings
 import com.tideo.autobrightness.app.settings.ContextRuleStore
 import com.tideo.autobrightness.app.settings.DataStoreContextBaselineStore
+import com.tideo.autobrightness.app.settings.DisplayCalibrationStore
 import com.tideo.autobrightness.app.settings.ExperimentPrefsStore
 import com.tideo.autobrightness.app.settings.NightLightAnchorStore
 import com.tideo.autobrightness.app.settings.NightLightVerdictStore
@@ -37,6 +41,7 @@ import com.tideo.autobrightness.domain.circadian.NightLightTemperatureRamp
 import com.tideo.autobrightness.domain.wizard.OverridePoint
 import com.tideo.autobrightness.platform.brightness.AndroidScreenBrightnessController
 import com.tideo.autobrightness.platform.brightness.AndroidSecureDimmingController
+import com.tideo.autobrightness.platform.brightness.DumpsysDisplayBrightnessReader
 import com.tideo.autobrightness.platform.context.AndroidLocationReader
 import com.tideo.autobrightness.platform.context.GeoIpLocationClient
 import com.tideo.autobrightness.platform.display.AndroidNightDisplayServiceBridge
@@ -66,6 +71,8 @@ class AppModule(context: Context) {
     val nightLightAnchorStore: NightLightAnchorStore = NightLightAnchorStore(appContext.displayPrefsDataStore)
     val nightLightVerdictStore: NightLightVerdictStore =
         NightLightVerdictStore(appContext.displayPrefsDataStore, Build.FINGERPRINT)
+    val displayCalibrationStore: DisplayCalibrationStore =
+        DisplayCalibrationStore(appContext.displayPrefsDataStore, Build.FINGERPRINT)
 
     fun nightLightTemperatureRoute(display: SecureDisplayController) = NightLightTemperatureRoute(
         display = display,
@@ -77,6 +84,8 @@ class AppModule(context: Context) {
     fun createRuntime(scope: CoroutineScope): RuntimeGraph {
         val brightness = AndroidScreenBrightnessController(appContext)
         val debugSink: DebugSink = ToastDebugSink(appContext)
+        val handoffFlash = ToastHandoffSink(appContext)
+        val displayReader = DumpsysDisplayBrightnessReader(appContext)
         // Late-bound hook (engine constructed before controller).
         val controllerHook = ControllerHookHolder()
         val contextEngine = ContextEngine(
@@ -132,6 +141,9 @@ class AppModule(context: Context) {
             proximitySource = AndroidProximitySensorSource(appContext),
             callbackLog = LiveRuntimeState.sensorCallbacks,
             scaleRefreshPeriodMs = CircadianScaleRefresh.PERIOD_MS,
+            handoffSink = handoffFlash,
+            displayReader = displayReader,
+            calibrationSink = StoredDisplayCalibrationSink(displayCalibrationStore::write, handoffFlash),
         )
         controllerHook.hook = controller
         // D-110: recompute when circadian location resolves late.
@@ -170,7 +182,14 @@ class AppModule(context: Context) {
             temperatureRoute = nightLightTemperatureRoute(secureDisplay),
         )
 
-        return RuntimeGraph(controller, contextEngine, panicSensor, privilegeManager, displayToggles)
+        val highBrightness = HighBrightnessUpdates(
+            reader = displayReader,
+            calibration = displayCalibrationStore::current,
+            settingBrightness = { runCatching { brightness.read() }.getOrNull() },
+            sink = handoffFlash,
+        )
+
+        return RuntimeGraph(controller, contextEngine, panicSensor, privilegeManager, displayToggles, highBrightness)
     }
 }
 
@@ -182,6 +201,7 @@ class RuntimeGraph(
     val privilegeManager: PrivilegeManager,
     // D-151: display-toggle profile fields.
     val displayToggles: DisplayTogglesCoordinator,
+    val highBrightness: HighBrightnessUpdates,
 ) {
     val activeContext: StateFlow<String?> = contextEngine.activeContext
 }

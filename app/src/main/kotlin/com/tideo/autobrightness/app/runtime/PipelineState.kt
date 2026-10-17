@@ -36,6 +36,8 @@ data class PipelineState(
     val pausedByOverride: Boolean = false,
     // prof759/task545: proximity damps smoothing alpha ×0.1.
     val proximityNear: Boolean = false,
+    // DD-070 %AAB_AdaptiveHandoff: Android owns brightness; survives hibernate, reconciled at start (DD-073).
+    val handedOff: Boolean = false,
     val smoothedLux: Double? = null,
     val lastRawLux: Double? = null,
     val lastAcceptedMs: Long? = null,
@@ -63,6 +65,8 @@ data class PipelineState(
     val lastAppliedBrightness: Int? = null,
     // D-109: perceived brightness (un-floored); darkened by secure layer if needed.
     val targetBrightness: Int? = null,
+    // DD-077: Android's brightness while handed off; only the service's published copy carries it.
+    val systemBrightness: Int? = null,
     // DC-007: continuous, so it is readable on a device that never fires an override.
     val lastBrightnessWrite: BrightnessWriteResult? = null,
     // DC-007: event-scoped, written where an override is detected OR dismissed.
@@ -80,6 +84,12 @@ data class PipelineState(
             val band = (threshAbsLow ?: return false) to (threshAbsHigh ?: return false)
             return (smoothedLux ?: return false) !in BrightnessEngine.settledRange(band, lastRawLux ?: return false)
         }
+
+    val shownBrightness: Int?
+        get() = if (handedOff) systemBrightness else targetBrightness ?: lastAppliedBrightness
+
+    val currentBrightness: Int?
+        get() = if (handedOff) systemBrightness else lastAppliedBrightness
 
     fun unchanged(lux: Double): Boolean {
         val low = threshAbsLow ?: return false
@@ -114,4 +124,6 @@ sealed interface PipelineEvent {
     data object ContextChanged : PipelineEvent
 
     data object ScaleTick : PipelineEvent
+
+    data object CalibrateDisplay : PipelineEvent
 }

@@ -12,12 +12,12 @@ adds super dimming and Privileged Display.
 
 ## Current state
 
-Harness AMH 14.1.0 with its one hand step applied (DC-029…DC-036, DC-051); the live ledger is
+Harness AMH 15.1.0, scripts and hand-applied seed prose together (DD-066); the live ledger is
 `LEDGER_D.md`. **Release standing is NOT recorded here:** the session banner computes it
 (`scripts/session-facts.sh`, DC-030), settled by hand with
 `git ls-remote --tags --refs origin 'refs/tags/v*'`.
 
-The tree declares 1.14.1 / vc29 (the train paragraph under the Owner queue); 1.14.0's device
+The tree declares 1.15.0 / vc30 (the train paragraph under the Owner queue); 1.14.0's device
 round passed on 1.14.0-debug vc28 (DD-036), and step 38a's #145 check passed on 1.14.1-debug vc29
 with a brief warmer tint before the expected one (DD-065). The 0–4095 conversion
 path stays frozen as built (DC-011…DC-013, DC-025…DC-028, DB-083), the light-stall findings H1/H2
@@ -26,12 +26,9 @@ stays closed (DB-051…DB-060), and Scorecard.dev is a run-once local input.
 
 ## Active work
 
-- **Bright-light hand-off (#136)** — `docs/plans/BRIGHT_LIGHT_HANDOFF.md`, spec only (owner,
-  2026-10-01); it goes in the train after 1.14.0 (owner, 2026-10-07), each unit on the owner's
-  go-ahead.
 - **Low-lux settling jitter** — `docs/plans/LOW_LUX_SETTLING_JITTER.md`, spec only; its
-  **Proposed fix** is approved as written and goes in the train after 1.14.0 (owner, 2026-10-08),
-  each step on the owner's go-ahead.
+  **Proposed fix** is approved as written (owner, 2026-10-08) and deferred to the train after
+  1.15.0 (owner, 2026-10-17), each step on the owner's go-ahead.
 
 ## Owner queue
 
@@ -47,9 +44,10 @@ stays closed (DB-051…DB-060), and Scorecard.dev is a run-once local input.
 > fork, options, recommendation (D-167), dated (DA-006); credential leaks and external-content
 > escalations land here too.
 
-1. **[2026-10-04] Get eleven Chinese strings translated; they show in English until then.**
-   `help_pwm_exponent` (DD-014), `contexts_only_plugged_in` (DD-025) and
-   `pd_night_light_temp_hint` (DD-045) changed meaning, so their old Chinese was removed (DD-026),
+1. **[2026-10-04] Get twelve Chinese strings translated; they show in English until then.**
+   `help_pwm_exponent` (DD-014), `contexts_only_plugged_in` (DD-025),
+   `pd_night_light_temp_hint` (DD-045) and `ssid_help_dump_security` (DD-077, added 2026-10-17)
+   changed meaning, so their old Chinese was removed (DD-026),
    the rule editor's four `contexts_offset_*` strings are new (DD-035), and so are the extended
    Night Light range's four: `settings_night_light_extended` (DD-047),
    `pd_night_light_temp_hint_extended` and the two `pd_night_light_extended*` (DD-050). Asked in
@@ -57,13 +55,33 @@ stays closed (DB-051…DB-060), and Scorecard.dev is a run-once local input.
    (owner, 2026-10-08). Paste translations replied there into the file. Settles it:
    `grep -c -e 'name="help_pwm_exponent"' -e 'name="contexts_only_plugged_in"' -e
    'name="pd_night_light_temp_hint' -e 'name="contexts_offset_' -e
-   'name="settings_night_light_extended"' -e 'name="pd_night_light_extended'
-   app/src/main/res/values-b+zh+Hans/strings.xml` prints 11.
+   'name="settings_night_light_extended"' -e 'name="pd_night_light_extended' -e
+   'name="ssid_help_dump_security"' app/src/main/res/values-b+zh+Hans/strings.xml` prints 12.
 
-**This train is `1.14.1` on vc29, its ONE bump** (the owner's patch bump of 2026-10-10 for #145,
-after `main` shipped 1.14.0 / vc28 as #144). Land further user-facing fixes in `changelogs/29.txt`
-(500-character cap), never by bumping or creating `30.txt`; re-open only for something major, and
-say so.
+2. **[2026-10-13] Decide whether to add a check that the output-redaction hook is still wired.**
+   Since AMH 15.0.0 both adapters run `scripts/redact-tool-output.sh` after every tool call, but
+   nothing in this tree notices if that `PostToolUse` group is deleted, rewired or loses its bash
+   pin — a missing redaction hook looks exactly like output that held no credential (DD-066).
+   Options: (a) a fact check in `scripts/guards/doc-facts.sh` with a fixture in
+   `scripts/tests/local-guards.sh`, a rule change under rule review; (b) leave it prose-only, as
+   disclosed in the adapter comments. Recommendation (a): upstream ships the same check in its own
+   repository for this reason. Unverified until you answer; settles it: `grep -c
+   redact-tool-output scripts/guards/*.sh` prints a nonzero count, or a STATE changelog line records
+   (b).
+
+3. **[2026-10-16] Move CI to Ubuntu 26.04 when you choose; nothing breaks if you wait.** Every
+   workflow is pinned to `ubuntu-24.04` (DD-068), so GitHub's switch of `ubuntu-latest` to 26.04
+   (2026-10-19 to 11-19) changes nothing here. Options: (a) move after the rollout settles, in a
+   PR that changes only the runner labels; (b) stay on 24.04 until GitHub announces its
+   retirement. Recommendation (a): accept it only when that PR's `Build` and all four
+   `F-Droid compatibility` stages are green, the reproducibility stage above all. Settles it:
+   `grep -rc 'ubuntu-24.04' .github/workflows/` prints 0 for every file, or a STATE changelog line
+   records (b).
+
+**The tree declares `1.15.0` / vc30, this train's ONE bump**, made by the hand-off plan's unit 0
+after v1.14.1 was seen tagged on 2026-10-16 (`git ls-remote --tags --refs origin 'refs/tags/v*'`).
+`changelogs/30.txt` (500-character cap) carries only the hand-off, since the low-lux jitter fix
+moved to the next train. Never bump twice in one train.
 
 ## Decided non-items
 
@@ -75,9 +93,38 @@ proposing work; changing it is legislation under RUNBOOK's rule-review protocol.
 
 Newest first; ledger rows are the durable detail.
 
+- 2026-10-17 — **Owner's cursory pass of DEVICE_TEST_SCRIPT §18 on the phone found it all fine;
+  Owner queue item 4 is closed and the train goes to its PR (DD-084). Astra's ship check said
+  HOLD on an interrupted calibration, left to the owner's merge call, and a data-keeping
+  downgrade, which the owner dismissed (DD-085).**
+
+- 2026-10-17 — **Hand-off unit 6 closes the #136 plan: `30.txt` final, parity gap dev-03,
+  DEVICE_TEST_SCRIPT §18 steps 58–61 with their e2e rows, the settings schema and the DataStore
+  map (now listing `display_prefs` and the controller's `screen_brightness_controller` prefs);
+  the AAB export in `dist/` and the plan file are deleted, the plan's last unrecorded facts kept
+  as DD-082 and DD-083 (Sol review). Owner queue item 4 asks for §18. The
+  low-lux jitter fix is deferred to the train after 1.15.0 (owner).**
+
+- 2026-10-15..17 — **Bright-light hand-off (#136) on 1.15.0 / vc30, from the owner's AAB build:
+  AAB's reference (DD-070, DD-072), domain `HandoffRules` and per-profile settings with four
+  owner-approved deviations (DD-071), the controller's `handed_off` marker (DD-073), the runtime coordinator (DD-074),
+  surfaces that say "Android", the Hand-off Behavior screen and AAB's flashes (DD-075, DD-076),
+  and the HBM readout with display calibration (DD-077…DD-080), which passed the owner's sunlight
+  test on the phone (DD-081; debug builds go on over adb, as Play Protect blocks a file-manager
+  install).**
 - 2026-10-16 — **`DraftSettingsViewModelTest`'s intermittent CI hang fixed, test-only: an earlier
   test's in-flight `apply()` wedged the DataStore writer across Robolectric's looper reset
   (DD-069).**
+- 2026-10-16 — **The `DraftSettingsViewModelTest` CI-hang fix went out as PR #147 off `main`;
+  Owner queue item 2 now asks for that merge.**
+- 2026-10-16 — **Every workflow pinned to `ubuntu-24.04` ahead of GitHub moving `ubuntu-latest`
+  to 26.04 (DD-068); the move itself is Owner queue item 3.**
+- 2026-10-16 — **CI speed: `build.yml` runs the guard fixture suites only after a failed ladder,
+  since `verify.sh` already runs them (~80 s a run, DD-067).**
+- 2026-10-13 — **Harness AMH 14.1.0 -> 15.1.0: root/home deletions permanently denied, checkpoint
+  reordered (STATE line → ladder → commit → `--guards-only` → push), a Destructive work section in
+  AGENTS.md, output redaction wired as a `PostToolUse` hook in both adapters (DD-066).**
+
 - 2026-10-10 — **1.14.1 / vc29 for #145: a circadian Night Light key that the device moved off
   what Tideo wrote is rewritten by the next tick, and an apply gets an early tick 5 s later
   (DD-064); owner-verified on device, with a brief warmer tint before the expected one (DD-065).**

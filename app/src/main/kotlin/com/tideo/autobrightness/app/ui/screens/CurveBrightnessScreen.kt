@@ -11,6 +11,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
@@ -36,6 +37,8 @@ import com.tideo.autobrightness.app.ui.components.SectionHeader
 import com.tideo.autobrightness.app.ui.components.SettingsColumn
 import com.tideo.autobrightness.app.ui.graph.BrightnessCurveChart
 import com.tideo.autobrightness.domain.wizard.OverridePoint
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 internal fun List<FieldError>.forField(name: String): String? = firstOrNull { it.field == name }?.message
 
@@ -112,6 +115,9 @@ fun CurveBrightnessContent(
                 overridePoints.map { Offset(it.lux.toFloat().coerceAtLeast(0.1f), it.brightness.toFloat()) }
             }
             var pendingDelete by remember { mutableStateOf<OverridePoint?>(null) }
+            val handoff by produceState<HandoffPreview?>(null, draft.handoffEnabled, draft.handoffLux, curveConfig) {
+                value = withContext(Dispatchers.Default) { handoffPreview(draft, curveConfig) }
+            }
             BrightnessCurveChart(
                 curveConfig,
                 modifier = Modifier.testTag("brightness_curve_chart"),
@@ -122,7 +128,9 @@ fun CurveBrightnessContent(
                 // the crosshair should sit where the user actually sees the screen, not at the floor.
                 // Falls back to the applied value when they're equal (PWM-sensitive off → target==applied).
                 currentLux = live.smoothedLux?.takeIf { live.serviceOn },
-                currentBrightness = (live.targetBrightness ?: live.lastAppliedBrightness)?.takeIf { live.serviceOn },
+                // DD-077: Android's reading can pass 255, off this chart's axis.
+                currentBrightness = live.shownBrightness?.takeIf { live.serviceOn && !live.handedOff },
+                handoffLux = handoff?.effective,
                 overridePoints = overlay,
                 referenceCurve = referenceConfig,
                 onDeleteOverridePoint = if (onDeleteOverridePoint == null) {

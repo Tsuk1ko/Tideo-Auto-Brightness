@@ -121,7 +121,7 @@ fun LiveDebugContent(
                 Metric(stringResource(R.string.debug_raw_lux), fmtLux(p.lastRawLux), "debug_raw_lux")
                 Metric(stringResource(R.string.debug_dynamic_threshold), fmtPercent(p.threshDynamic), "debug_dynamic_threshold")
                 Metric(stringResource(R.string.debug_dead_zone), "${fmtLux(p.threshAbsLow)} – ${fmtLux(p.threshAbsHigh)}", "debug_dead_zone")
-                Metric(stringResource(R.string.debug_current_bright), fmtInt(p.lastAppliedBrightness), "debug_current_bright")
+                Metric(stringResource(R.string.debug_current_bright), fmtInt(p.currentBrightness), "debug_current_bright")
                 Metric(stringResource(R.string.debug_target_bright), fmtInt(p.targetBrightness), "debug_target_bright")
             }
 
@@ -140,6 +140,11 @@ fun LiveDebugContent(
                     stringResource(R.string.debug_override),
                     stringResource(if (p.paused) R.string.dashboard_status_paused else R.string.debug_override_no),
                     "debug_override",
+                )
+                Metric(
+                    stringResource(R.string.debug_handoff),
+                    stringResource(if (p.handedOff) R.string.debug_handoff_android else R.string.debug_override_no),
+                    "debug_handoff",
                 )
                 Metric(stringResource(R.string.debug_active_rule), state.activeContext ?: stringResource(R.string.debug_active_rule_none), "debug_active_rule")
             }

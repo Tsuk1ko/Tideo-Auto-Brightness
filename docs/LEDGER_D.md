@@ -678,6 +678,28 @@
   settled at the expected one; it is not a full red flash. Its cause is not established, and no
   fix is made for it; step 38a now expects it, so a later run can tell whether it grows or goes
   away.
+- DD-066: **AMH 14.1.0 -> 15.1.0 landed whole in one commit, scripts and seed prose together, so
+  the two version keys moved as one (2026-10-13).** MAJOR 15.0.0's binding notes are applied: the
+  command guard now denies `rm -rf` and `git clean -fd` aimed at a root or home directory with no
+  rerun clearance, and the checkpoint order is STATE line, ladder, commit, `--guards-only`, push
+  (AGENTS.md **Session protocol**, RUNBOOK discipline 3). Widening the Claude command guard to
+  `Bash|PowerShell` (15.1.0) meant splitting its `PreToolUse` group: the repo-local `python-edit.sh`
+  hook shared it and parses only Bash payloads, so it stays on `Bash` alone. The upstream adapter
+  `$comment` for output redaction cites an `adapter-set.sh` guard that is local to the AMH repository
+  and absent here, so it was adapted rather than copied; copied verbatim it would have claimed a
+  check that does not run, and nothing in this tree notices if the `PostToolUse` redaction group is
+  deleted. The upgrade's first command, an `rm -rf` of a scratch clone path that turned out not to
+  exist, drew the guard's one-time destructive advisory; the check showed nothing to delete, so the
+  `rm` was dropped rather than rerun.
+- DD-067 [cited]: **`build.yml` runs the two guard fixture suites up front no more, only after a
+  failed ladder (owner's CI speed request, 2026-10-16).** `verify.sh` already runs both before
+  Gradle, so a green run paid ~80 s of a ~7 min job twice (run 38048938933). A red guard still
+  gets its fixture verdict, now one step after the ladder instead of one before it.
+- DD-068 [cited]: **All nine workflows run on `ubuntu-24.04` instead of `ubuntu-latest` (owner's
+  question, 2026-10-16).** GitHub moves `latest` to 26.04 gradually from 2026-10-19 to 11-19, so
+  two runs of one commit, a release among them, could land on different images. The JDK and the
+  Gradle inputs do not depend on the image, but the preinstalled SDK, Python, pipx and apt do;
+  the move to 26.04 is a later change of its own, accepted when `fdroid-compat.yml` is green on it.
 - DD-069 [cited]: **`DraftSettingsViewModelTest`'s intermittent CI hang (run 38039291255 on `main`)
   was a DataStore write wedged by an earlier test; fixed in the test only.** DataStore 1.1.1 holds
   its write lock while it runs a transform in the caller's context, so `apply()`'s write from
@@ -688,3 +710,226 @@
   writes now go off-main while idling the main looper, bounded at 5 s, and an `@After` barrier
   drains every test's writes. Left open (Sol): `SettingsViewModel`'s init `ensureSeeded()` writes
   `userProfilesDataStore` from Main the same way, unobserved as a hang.
+- DD-070 [cited]: **AAB's bright-light hand-off (#136), the owner's build of 2026-10-15 with that
+  day's fixes, is the port's reference: above an entry lux it hands brightness to Android Adaptive
+  Brightness, writes nothing and detects no override, and takes it back below entry × hysteresis.**
+  Per profile it keeps `%AAB_AdaptiveOn` (false), `%AAB_AdaptiveHandoffThresh` (decimal, 25130 lx)
+  and `%AAB_HandoffHysteresis` (0.8, slider 50–100 %) in JSON
+  `adaptive_handoff.{enabled,threshold,hysteresis}`, a missing key loading its default, and the
+  unsaved runtime flag `%AAB_AdaptiveHandoff` is 1 while handed off. `_Hand-offDecider` enters
+  when `AdaptiveOn`, not handed off and `SmoothedLux > threshold`, and exits when handed off and
+  `!AdaptiveOn` or `SmoothedLux < threshold × hysteresis`; it runs after smoothing and before Map
+  Lux, at Set Initial Brightness on the raw reading, on Apply, and after a profile load while the
+  service is on and not overridden, never on a dead-band refusal. Entry sets the flag, turns Auto
+  on, then drops dimming; exit turns Auto off, reads brightness, zeroes the flag and
+  `%AAB_HBMFlag`, then falls through to the write; while handed off the `Allow Override` profile,
+  both transitions' writes and override checks, and Map Lux's PWM/DC-like path are skipped, and
+  the service toggle hands back on disable and forces MANUAL then re-decides on enable. Validity
+  is `base(threshold) ≥ 0.9 × MaxBright` on the unclamped, unscaled base curve, the minimum being
+  `10 × Form3A` when that reaches Zone2End, else a 50-step bisection over [0, max(Zone2End,
+  10000)]; Apply replaces a low value with it for a second tap, and a curve save or profile load
+  raises the global silently. Switching Adaptive Brightness off by hand during a hand-off and a
+  100 % hysteresis are declined as user error (owner).
+  Completed by DD-082.
+- DD-071 [cited]: **Tideo's port of DD-070 departs from AAB in four places (owner-approved,
+  2026-10-15).** It enters at `max(stored, minimum)` instead of blocking Apply or rewriting the
+  profile, so an undone curve edit restores the user's value; Resume and service start keep a
+  still-valid hand-off; the minimum is the lowest whole lux from which the base curve stays ≥ 0.9 ×
+  max up to 100 000 lx, found by a downward scan that is exact on DD-012's non-monotone curves
+  while zone ends are whole lux, as settings store them, and null when none exists; and the HBM
+  readout (DD-072) is outside the core units. Lux is stored whole, an AAB decimal importing
+  rounded up, and the default is 25 132 because Tideo derives Form3A with form2B as 8.8f; a
+  hysteresis outside [0.5, 1.0] or non-finite imports as 0.8. Apply, a context swap, import and
+  Resume are decided when their queued control event runs, on the lux already held and never
+  ahead of an earlier event (DC-069, DC-070), and nothing dims while handed off. `HandoffRules`
+  never enters without an effective threshold and exits when it vanishes mid-hand-off, so a curve
+  whose minimum passes 100 000 lx cannot strand AUTOMATIC. Tideo's own AUTOMATIC is never saved as
+  the user's pre-service mode (D-134), which AAB, keeping no saved mode, never needed.
+- DD-072: **AAB's HBM readout, the reference for the open HBM question, shows real brightness
+  above 255 while handed off.** `_CalibrateDisplayRange` writes 13 `screen_brightness` points in
+  MANUAL mode, reads `dumpsys display` at each (the first of `mScreenBrightness`,
+  `mDisplayBrightness`, `mCurrentScreenBrightness`) through `%AAB_SecondaryPrivilege` (Root, ADB
+  WiFi, Shizuku, else DUMP), and stores `"value:raw,…"` in `%AAB_BrightCal` keyed to
+  `Build.FINGERPRINT`. `_ReadBrightness` reads the same way and maps raw to `%AAB_CurrentBright`,
+  extrapolating past the 255 point and setting `%AAB_HBMFlag`; it runs every 2 s while display and
+  service are on, handed off and not overridden (profile `High Brightness Updates`), and both
+  transitions call it while handed off when a calibration exists and is not `error`. On the
+  owner's OnePlus CPH2653 (SDK 36, read 2026-10-16) AOSP HBM is unconfigured (`mHbmMode=off`,
+  `mHbmData=null`) and the OEM boost runs 4095 → 4674 above `mScreenBrightnessNormalMaximum`, so
+  AAB's HBM rule there is the dumpsys brightness above 4095. The light sensor's declared
+  `maxRange` 65535 is no saturation point: the owner has seen readings over 100 000 lx.
+  Its device readings are DD-083.
+- DD-073 [cited]: **A bright-light hand-off (DD-070) owns Android's AUTOMATIC through a persisted
+  `handed_off` marker beside D-134's saved mode, so Tideo's own AUTOMATIC is never saved as the
+  user's pre-service mode.** `handOffToSystem()` commits the original mode (the saved one, or the
+  current mode when none is saved or it is not MANUAL) together with the marker in ONE `commit()`
+  before writing AUTOMATIC, and clears a marker it created when that write does not land (an
+  existing hand-off keeps its marker); a failed commit also rolls the in-memory marker back,
+  because Android's `commit()` changes the in-memory map before reporting the disk failure and a
+  retry would otherwise skip the persist. While the marker is set, `forceManualMode()` saves
+  nothing, and any landed MANUAL (`forceManualMode()`, `reclaimFromSystem()`) clears it, so a
+  later AUTOMATIC is the user's again (Sol review, 2026-10-16). `restoreMode()` clears both keys
+  unless its write fails during a hand-off, when it keeps both for the next start to reconcile
+  and restore. At start, `reconcileHandoff()` keeps the hand-off only when the marker is set and
+  the mode reads AUTOMATIC, and MANUAL clears the marker with the saved mode intact. An unreadable
+  mode starts the service normally but keeps the marker until a MANUAL lands, since the mode may
+  still be Tideo's AUTOMATIC (glue review, 2026-10-16, narrowing the plan's "MANUAL or unreadable
+  clears").
+- DD-074 [cited]: **The runtime hands off and back through one coordinator that decides after
+  smoothing and before the write, and at Set Initial Brightness on the lux already held, while an
+  entry in flight and `stop()`'s `serviceOn` flip serialize on one lock: `stop()` does not join the
+  consumer (DC-047), and an AUTOMATIC landing after `restoreMode()` would be stranded with no
+  marker, then saved as the user's mode at the next start.** The lock spans only the entry's
+  `serviceOn` check, dimming release and mode flip and `stop()`'s flag write, so `stop()` waits at
+  most those secure-settings writes and one mode write and commit, never an animation, and DC-047's
+  declined join and torn-down flag stand for every other write (Sol review, 2026-10-16). Entry sets the flag, arms the settle window (DC-009), drops dimming, flips
+  the mode, re-arms the window from the end of the flip and marks the brightness baseline UNKNOWN;
+  exit arms, reclaims, re-arms and only then clears the flag; a handed-off cycle publishes lux, band
+  and α but writes, animates and dims nothing and tells the throttle nothing changed, and every
+  decision that leaves Android in charge releases dimming again, so a release refused at entry is
+  retried (glue review). Both override
+  gates close on the flag, the observer gate and the commit's `canPause`, the second for an
+  override admitted before the entry and committed after its settle window, which would otherwise
+  reclaim MANUAL as `DISMISSED_MODE` and undo the hand-off. With no lux held, only an exit that
+  needs none (feature off, or no effective threshold) is decided and the next wake writes; Pause
+  hands back first and pauses even when the reclaim is refused, keeping the flag so Resume
+  re-decides. The flag survives hibernate, start reads it from `reconcileHandoff()` before any
+  observer or cycle, `stop()` clears it, and the coordinator keeps the curve's minimum per curve
+  config because finding it scans up to 100 000 points.
+- DD-075 [cited]: **While a bright-light hand-off (DD-074) runs, every surface names Android and
+  none shows a brightness: Tideo does not know what Android chose, and the target it keeps
+  publishing is only its own curve's value.** The notification reads "Android is controlling
+  brightness · N lx" on smoothed lux, the dashboard pill, widget and Quick Settings tile read
+  "Android", and Live Debug gains a Hand-off metric while keeping the raw target as a diagnostic;
+  the dashboard hero, the widget, the Curve & Brightness readout and crosshair and the Circadian
+  taper marker go blank. Off, an override and a pause still win over Android, since a Pause whose
+  reclaim is refused keeps both flags and Resume is then the user's move. The Curve & Brightness
+  card edits the three per-profile fields (DD-071) and notes the draft curve's minimum, that the
+  stored lux is raised to it, or that the curve never qualifies; it shows the exit floored, because
+  the exit comparison is strict, and the graph marks the effective threshold in the neutral outline
+  colour, since gold is the reference curve's; it finds the minimum off the main thread, as the
+  scan runs on every curve edit. Help is the
+  fields' tooltips plus a new user-guide section 10, a new string so that `guide_s7_body` keeps its
+  Chinese translation (DD-026). The tile's subtitles stay hardcoded English, as they were (Sol
+  review, 2026-10-17, for the floor and the taper marker; glue review, for the colour and the
+  thread).
+  Corrected by DD-076.
+  Its "none shows a brightness" is superseded by DD-077.
+- DD-076 [cited]: **The bright-light hand-off has its own Menu screen, Hand-off Behavior, and each
+  hand-off and hand-back flashes, as in AAB (owner, 2026-10-17, after a device test of 1.15.0-debug
+  vc30 in 14 000 lx).** AAB's settings are their own scene, "Hand-off Behavior", reached from its
+  menu, and `_Hand-offToAdaptive` A8 and `_HandBackToAAB` A5 each Flash that Adaptive Brightness
+  went on or off and who now controls brightness; DD-075's card on Curve & Brightness and its
+  notification text alone did not match. The screen
+  sits after Curve & Brightness in the Menu's Settings card, with its own draft, Apply, Discard and
+  a Reset of the three fields (DD-071) only; Curve & Brightness keeps the graph marker. Its minimum
+  is the applied curve's, not the draft's, since the curve is edited elsewhere and a context swap
+  while it is open changes the applied one (Sol review, 2026-10-17). The coordinator flashes
+  through `AabFlash` only after a landed entry or reclaim, never for a refused one; Pause hands back
+  silently, because Tideo then pauses rather than takes control (Sol review), and `stop()` restores
+  the user's mode without a reclaim, so disabling Tideo does not claim it is back in control, where
+  AAB's disable runs `_HandBackToAAB` and flashes. Its three source pointers raise the app comment
+  budget through a new reviewed `RAISED_app=3`, under the owner's pre-approval for unit 5
+  (2026-10-16), kept apart from `MEASURED_app` so that stays a measurement (rule review).
+- DD-077 [cited]: **While a bright-light hand-off runs, Tideo shows the brightness Android chose,
+  read from `dumpsys display` and mapped through a per-build display calibration, so a reading
+  above 255 means the OEM's High Brightness Mode is on (owner, 2026-10-17, answering the hand-off
+  plan's Open question 1 with AAB's own design, read through the DUMP grant, root or Shizuku; Tideo
+  has no ADB Wi-Fi).** A 2 s loop outside the pipeline reads it while handed off, on, unpaused and
+  awake, and flashes "High Brightness Mode activated" or "disabled" when it crosses 255; a sweep
+  started from the Hand-off Behavior screen's Display Range Calibration card runs as one pipeline
+  event, so no cycle, animation or control event interleaves (Astra advice, 2026-10-17, for
+  in-service over a screen-run sweep). The readout lives only in the service's published copy of
+  the state (`systemBrightness`), never the pipeline's, and feeds the dashboard hero, widget, Live
+  Debug's current brightness and the Curve & Brightness readout, while the curve crosshair stays
+  blank because the value can leave its axis. The calibration is a device fact in `display_prefs`,
+  stamped with `Build.FINGERPRINT` like the Night Light verdict (DD-048), outside every profile, and
+  Shizuku's runtime uses become four. AAB's reference is DD-078, and the port's deviations from it
+  are DD-079 and DD-080.
+- DD-078: **AAB's HBM readout and display calibration, as handed over in the hand-off export
+  (`dist/aab-bright-light-handoff/`, removed by the plan's unit 6).** Profile `High Brightness
+  Updates` (Tick 2000 ms while `%AAB_AdaptiveHandoff` is 1, `%AAB_Service` is On,
+  `%AAB_Manual_Override` is not true and the display is on) runs `_ReadBrightness`: without a
+  `%AAB_BrightCal` other than `error` whose `%AAB_BrightCalFP` equals `Build.FINGERPRINT` it does
+  nothing (a mismatch sets `%AAB_NeedsCal`); otherwise it runs `dumpsys display` through
+  `%AAB_SecondaryPrivilege` (Root, ADB WiFi, Shizuku, else the DUMP grant; 5 s), takes the first
+  `(mScreenBrightness|mDisplayBrightness|mCurrentScreenBrightness)=` decimal, clamps below the
+  first point, interpolates between points, extrapolates past the last with the last segment's
+  slope computed first, and rounds with `Math.round`. It stops if the value is unchanged, and
+  otherwise flashes "High Brightness Mode activated" above 255 or "disabled" at or below whenever
+  that changes `%AAB_HBMFlag`, which `_HandBackToAAB` sets to 0 after reading once more.
+  `_CalibrateDisplayRange` toggles the service off, forces MANUAL, writes `screen_brightness` 1, 5,
+  10, 25, 50, 75, 100, 128, 150, 175, 200, 225 and 255, waits 800 ms after the first, polls every
+  150 ms for up to 3 s until two equal readings differ from the previous point, locks to the first
+  field found, requires rising readings, and restores brightness and mode. It stores `value:raw,…`
+  with the fingerprint, or `error` on any failure including the restore, replacing an older
+  calibration, flashes, and toggles the service back. The scene's card shows Calibrating,
+  Calibrated, Failed, Update Needed or Not Calibrated ("capped at standard 255") and asks before a
+  recalibration.
+- DD-079: **Tideo's display calibration departs from AAB's (DD-078) in four ways (Sol glue review,
+  2026-10-17, for the second and third).** Its 13 points go through Tideo's 0–255 conversion, since
+  AAB's literal writes put its "255" at 255 of 4095 on the owner's panel, against the owner's
+  reading of 4095 at 255. It is one pipeline event, not a service toggle: it hands back silently as
+  Pause does, holds override detection off on a flag of its own because a screen-on re-arms the
+  settle window, restores the level read before it through the same conversion, and re-runs Set
+  Initial Brightness, which may hand off again. It never writes the mode and fails instead when the
+  mode is not MANUAL (a pause under Adaptive Brightness switched on by hand), so no mode write can
+  land after Disable's `restoreMode()`; it needs the service running, and Disable or panic
+  mid-sweep records a failure. A point whose last read ends past the 3 s window still counts, as in
+  AAB's loop, and the field the sweep locked is stored and read thereafter.
+- DD-080: **Tideo's HBM readout departs from AAB's (DD-078) in four ways (Sol review, 2026-10-17,
+  for the fourth).** It tries one chain, the DUMP grant, then root, then Shizuku, and keeps using
+  whichever answered. Uncalibrated, it shows the brightness setting through Tideo's conversion, at
+  most 255, rather than AAB's last target. The HBM flag starts at 0, so a first reading at or below
+  255 does not flash "disabled"; a hand-back does not read again, and a screen-off keeps the flag as
+  it keeps the hand-off. Exponent floats parse, only brightness lines leave the shell process, each
+  line is bounded, and Shizuku calls serialize, the display read allowed bind time plus its 5 s.
+- DD-081: **The bright-light hand-off's HBM readout (DD-077) passed the owner's sunlight test on
+  1.15.0-debug vc30 (2026-10-17, OnePlus CPH2653).** The build went in over adb, because Play
+  Protect blocked the file-manager install (its scan opened `PlayProtectDialogsActivity` as the
+  installer failed with "App not installed"), and DUMP was granted over adb; the calibration stored
+  a straight line from `1:16.0` to `255:4095.0` on `mScreenBrightness`, so Tideo's 255 lands on the
+  panel's normal maximum, as the owner reported for AAB. Handed off at 92 048 lx smoothed,
+  `screen_brightness_mode` read 1 and `mScreenBrightness` 4171 against
+  `mScreenBrightnessNormalMaximum` 4095, which the calibration maps to 260. The owner saw the
+  dashboard show the reading and the "High Brightness Mode activated" flash, and Live Debug showed
+  258 at 73 601 lx in partial shade. This phone gives apps a 0–255 brightness scale (Settings API
+  max 255) that it maps to its own 0–4095, which is why the sweep, written through Tideo's
+  conversion, reaches 4095 at 255 (DD-079).
+- DD-082: **Facts of AAB's hand-off reference (DD-070) that lived only in the hand-off plan, kept
+  here before unit 6 deleted it (Sol review, 2026-10-17).** AAB's threshold check has no upper
+  bound, where Tideo clamps the stored lux to 1..100 000 and finds no minimum past 100 000 lx
+  (DD-071). In the export, Smooth Brightness Transition V5 returns at once while handed off and
+  breaks out mid-animation when the flag flips, and the DC-like transition skipped its write and
+  override check but still applied dimming, until the owner's fix made Map Lux skip that path. The
+  owner's other fixes of 2026-10-15 deleted V5's leftover A10 Java block, made the scene's Apply
+  run `_Hand-offDecider`, and made `_CalibrateDisplayRange` read `dumpsys display` through
+  `%AAB_SecondaryPrivilege`, as `_ReadBrightness` does.
+- DD-083: **Unit 0's read-only adb facts behind DD-072, on the owner's OnePlus CPH2653 (SDK 36,
+  `CPH2653_16.0.10.600(EX01)`, 2026-10-16, indoors, the owner switching the mode).** The light
+  sensor is `OPLUS Fusion Light Sensor Next Gen`, declaring `maxRange=65535.0`. In MANUAL (mode 0,
+  `screen_brightness` 755) `mScreenBrightness`, `mCurrentScreenBrightness` and
+  `mCachedBrightnessInfo.brightness` all read 755.0, and in AUTOMATIC (mode 1, 1390) all three
+  read 1390.0 while the OEM's `OplusAutomaticBrightnessController` reported
+  `mAutoStrategyEnable=true` and `mScreenAutoBrightness=1390.0846`; no `mDisplayBrightness` line
+  exists. In both modes AOSP's `HighBrightnessModeController` read `mHbmMode=off`,
+  `mHbmData=null` and `mIsAutoBrightnessEnabled=false` with
+  `mCachedBrightnessInfo.hbmTransitionPoint=Infinity`, and the display reported
+  `mScreenBrightnessNormalMaximum=4095.0` and `mScreenBrightnessRangeMaximum=4674.0`. No reading
+  above 4095 was taken that day, which was cloudy; DD-081 took one in sunlight.
+- DD-084: **The owner ran a cursory pass of DEVICE_TEST_SCRIPT §18 (steps 58–61, the
+  bright-light hand-off) on the phone and found it all fine (owner, 2026-10-17), closing the
+  Owner-queue item that asked for steps 58–60.** The report gives no per-step readings, so this
+  row records a cursory owner pass, not measured band edges; step 61's measured readings are
+  DD-081.
+- DD-085: **Astra's ship check of the 1.15.0 train (2026-10-17, owner-requested, `-e low`) said
+  HOLD on two residuals; neither is fixed in the train, the first is left to the owner's merge
+  decision and the owner dismissed the second as a scenario no user meets.** A
+  process death mid-calibration skips the sweep's in-memory restore (`DisplayCalibrationRun`,
+  DD-079), leaving brightness at a sweep level as low as 1 until something writes it: an OS
+  restart of the sticky service runs Set Initial Brightness and writes the curve (DA-030), so it
+  strands only after a force-stop, or a Disable before that restart, since `restoreMode()` returns
+  the mode and never a level (D-134); AAB's sweep restores from memory too (DD-078). A downgrade to
+  1.14.1 that keeps app data while handed off makes 1.14.1's `forceManualMode()` save Tideo's
+  AUTOMATIC over the user's mode, which the `handed_off` marker (DD-073) cannot prevent there;
+  Android keeps data across a downgrade only for a debuggable build or with root.

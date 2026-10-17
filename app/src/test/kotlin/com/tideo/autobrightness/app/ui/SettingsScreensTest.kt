@@ -10,6 +10,7 @@ import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
@@ -21,6 +22,8 @@ import com.tideo.autobrightness.app.settings.ExperimentDateLocation
 import com.tideo.autobrightness.app.settings.SavedProfile
 import com.tideo.autobrightness.app.settings.SettingsValidator
 import com.tideo.autobrightness.app.state.AppEntry
+import com.tideo.autobrightness.app.state.CalibrationBadge
+import com.tideo.autobrightness.app.state.DisplayCalibrationUi
 import com.tideo.autobrightness.app.state.LiveDebugUiState
 import com.tideo.autobrightness.app.ui.components.ChartPager
 import com.tideo.autobrightness.app.ui.components.ChartSlot
@@ -34,6 +37,7 @@ import com.tideo.autobrightness.app.ui.screens.SuperDimmingContent
 import com.tideo.autobrightness.app.ui.screens.ContextsContent
 import com.tideo.autobrightness.app.ui.components.FlashPill
 import com.tideo.autobrightness.app.ui.screens.CurveBrightnessContent
+import com.tideo.autobrightness.app.ui.screens.HandoffContent
 import com.tideo.autobrightness.app.runtime.OverrideDiagnostic
 import com.tideo.autobrightness.app.runtime.OverrideDisposition
 import com.tideo.autobrightness.app.runtime.OverrideSource
@@ -330,6 +334,157 @@ class SettingsScreensTest {
         }
         compose.onNodeWithTag("diag_curve_current_bright").performScrollTo()
             .assertTextContains("33", substring = true)
+    }
+
+    private fun curve(draft: AabSettings, live: PipelineState = PipelineState()) {
+        compose.setContent {
+            MaterialTheme {
+                CurveBrightnessContent(
+                    draft, draft, emptyList(), epoch = 0, dirty = false,
+                    onEdit = {}, onApply = {}, onDiscard = {}, onBack = {}, live = live,
+                )
+            }
+        }
+    }
+
+    private fun handoff(draft: AabSettings, calibration: DisplayCalibrationUi? = null, onCalibrate: () -> Unit = {}) {
+        compose.setContent {
+            MaterialTheme {
+                HandoffContent(
+                    draft, draft, epoch = 0, dirty = false, onEdit = {}, onApply = {}, onDiscard = {}, onBack = {},
+                    calibration = calibration, onCalibrate = onCalibrate,
+                )
+            }
+        }
+    }
+
+    @Test
+    fun handoff_calibration_uncalibrated_explainsTheCap_andCalibratesAtOnce_DD077() {
+        var calls = 0
+        handoff(AabSettings(), DisplayCalibrationUi(CalibrationBadge.UNCALIBRATED, serviceRunning = true)) { calls++ }
+        compose.onNodeWithTag("calibration_badge").performScrollTo().assertTextContains("Not calibrated")
+        compose.onNodeWithTag("calibration_note").assertTextContains("stops at 255", substring = true)
+        compose.onNodeWithTag("calibration_button").performScrollTo().assertTextContains("Calibrate display").performClick()
+        assertEquals(1, calls)
+    }
+
+    @Test
+    fun handoff_calibration_recalibrating_asksFirst_DD077() {
+        var calls = 0
+        handoff(AabSettings(), DisplayCalibrationUi(CalibrationBadge.CALIBRATED, serviceRunning = true)) { calls++ }
+        compose.onNodeWithTag("calibration_button").performScrollTo().assertTextContains("Recalibrate display").performClick()
+        assertEquals(0, calls)
+        compose.onNodeWithTag("calibration_confirm").performClick()
+        assertEquals(1, calls)
+    }
+
+    @Test
+    fun handoff_calibration_needsTheService_andBlocksWhileRunning_DD077() {
+        handoff(AabSettings(), DisplayCalibrationUi(CalibrationBadge.FAILED, serviceRunning = false))
+        compose.onNodeWithTag("calibration_error").performScrollTo().assertExists()
+        compose.onNodeWithTag("calibration_service_off").assertExists()
+        compose.onNodeWithTag("calibration_button").assertTextContains("Retry calibration").assertIsNotEnabled()
+    }
+
+    @Test
+    fun handoff_calibration_runningDisablesTheButton_DD077() {
+        handoff(AabSettings(), DisplayCalibrationUi(CalibrationBadge.RUNNING, serviceRunning = true))
+        compose.onNodeWithTag("calibration_button").performScrollTo().assertIsNotEnabled()
+    }
+
+    private fun awaitText(text: String, substring: Boolean = false) = compose.waitUntil(10_000) {
+        compose.onAllNodesWithText(text, substring = substring).fetchSemanticsNodes().isNotEmpty()
+    }
+
+    @Test
+    fun handoff_namesTheMinimumAndTheExit() {
+        handoff(AabSettings(handoffEnabled = true))
+        awaitText("Lowest valid for this curve: 25132 lx")
+        compose.onNodeWithText("Takes back control below 20105 lx").performScrollTo().assertExists()
+    }
+
+    @Test
+    fun handoff_saysWhenTheThresholdIsRaised() {
+        handoff(AabSettings(handoffEnabled = true, handoffLux = 1_000, handoffHysteresis = 0.5))
+        awaitText("Hands off at 25132 lx instead", substring = true)
+        compose.onNodeWithText("Takes back control below 12566 lx").performScrollTo().assertExists()
+    }
+
+    @Test
+    fun handoff_saysWhenTheCurveNeverQualifies() {
+        handoff(AabSettings(handoffEnabled = true, form2B = -2f))
+        awaitText("so it never hands off", substring = true)
+        compose.onNodeWithText("Takes back control", substring = true).assertDoesNotExist()
+    }
+
+    @Test
+    fun handoff_offDisablesTheFields() {
+        handoff(AabSettings())
+        compose.onNodeWithText("Hand-off Behavior").assertExists()
+        compose.onNodeWithTag("field_handoffLux").performScrollTo().assertIsNotEnabled()
+        compose.onNodeWithText("Lowest valid", substring = true).assertDoesNotExist()
+    }
+
+    @Test
+    fun curveBrightness_hasNoHandoffCard_DD076() {
+        curve(AabSettings(handoffEnabled = true))
+        compose.onNodeWithTag("brightness_curve_chart").assertExists()
+        compose.onNodeWithTag("switch_handoffEnabled").assertDoesNotExist()
+    }
+
+    @Test
+    fun curveBrightness_liveReadout_showsAndroidsReadingWhileHandedOff_DD077() {
+        curve(AabSettings(), PipelineState(serviceOn = true, handedOff = true, smoothedLux = 30_000.0, targetBrightness = 200, systemBrightness = 291))
+        compose.onNodeWithTag("diag_curve_current_bright").performScrollTo().assertTextContains("291", substring = true)
+    }
+
+    @Test
+    fun curveBrightness_liveReadout_blanksWhileHandedOff() {
+        curve(AabSettings(), PipelineState(serviceOn = true, handedOff = true, smoothedLux = 30_000.0, targetBrightness = 200))
+        compose.onNodeWithTag("diag_curve_current_bright").performScrollTo().assertTextContains("—", substring = true)
+    }
+
+    @Test
+    fun handedOff_readoutsShowAndroidsBrightness_unclamped_DD077() {
+        compose.setContent {
+            MaterialTheme {
+                LiveDebugContent(
+                    state = LiveDebugUiState(
+                        pipeline = PipelineState(handedOff = true, lastAppliedBrightness = 120, systemBrightness = 291),
+                        serviceRunning = true,
+                    ),
+                    onSelectDebug = {}, onBack = {},
+                )
+            }
+        }
+        compose.onNodeWithTag("debug_current_bright").performScrollTo().assertTextContains("291", substring = true)
+        assertEquals(291, PipelineState(handedOff = true, targetBrightness = 200, systemBrightness = 291).shownBrightness)
+    }
+
+    @Test
+    fun liveDebug_handoffMetric_namesAndroid() {
+        compose.setContent {
+            MaterialTheme {
+                LiveDebugContent(
+                    state = LiveDebugUiState(pipeline = PipelineState(handedOff = true), serviceRunning = true),
+                    onSelectDebug = {}, onBack = {},
+                )
+            }
+        }
+        compose.onNodeWithTag("debug_handoff").performScrollTo().assertTextContains("Android", substring = true)
+    }
+
+    @Test
+    fun dashboardPill_handedOff_saysAndroid() {
+        compose.setContent {
+            MaterialTheme {
+                com.tideo.autobrightness.app.ui.components.BrightnessInstrument(
+                    state = com.tideo.autobrightness.app.state.DashboardUiState(serviceEnabled = true, serviceRunning = true, handedOff = true),
+                    onToggleService = {},
+                )
+            }
+        }
+        compose.onNodeWithText("Android").assertExists()
     }
 
     @Test
