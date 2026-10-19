@@ -26,9 +26,14 @@ stays closed (DB-051…DB-060), and Scorecard.dev is a run-once local input.
 
 ## Active work
 
-- **Low-lux settling jitter** — `docs/plans/LOW_LUX_SETTLING_JITTER.md`, spec only; its
-  **Proposed fix** is approved as written (owner, 2026-10-08) and deferred to the train after
-  1.15.0 (owner, 2026-10-17), each step on the owner's go-ahead.
+- **Faster Shizuku paths and Android 17 display APIs** — `docs/plans/PRIVILEGED_FAST_PATHS.md`,
+  spec only (owner, 2026-10-19). Unit 1 is the owner's Astra review. Units 2–13 wait until the
+  owner's OnePlus 13 runs ColorOS 17, and each unit runs on the owner's go-ahead.
+  [x] 0 plan committed · [ ] 1 Astra review · [ ] 2 ColorOS 17 baseline and facts · [ ] 3 split
+  `SHIZUKU_USAGE.md` · [ ] 4 helper metrics and version bump · [ ] 5 one-tap Shizuku grants ·
+  [ ] 6 resident helper · [ ] 7 BrightnessInfo readout · [ ] 8 compileSdk 36.1 · [ ] 9
+  event-driven readout · [ ] 10 push foreground app · [ ] 11 live HDR · [ ] 12 finer steps
+  (optional) · [ ] 13 close-out.
 
 ## Owner queue
 
@@ -44,19 +49,20 @@ stays closed (DB-051…DB-060), and Scorecard.dev is a run-once local input.
 > fork, options, recommendation (D-167), dated (DA-006); credential leaks and external-content
 > escalations land here too.
 
-1. **[2026-10-04] Get twelve Chinese strings translated; they show in English until then.**
+1. **[2026-10-04] Get 65 Chinese strings translated; they show in English until then.**
    `help_pwm_exponent` (DD-014), `contexts_only_plugged_in` (DD-025),
    `pd_night_light_temp_hint` (DD-045) and `ssid_help_dump_security` (DD-077, added 2026-10-17)
    changed meaning, so their old Chinese was removed (DD-026),
    the rule editor's four `contexts_offset_*` strings are new (DD-035), and so are the extended
    Night Light range's four: `settings_night_light_extended` (DD-047),
-   `pd_night_light_temp_hint_extended` and the two `pd_night_light_extended*` (DD-050). Asked in
-   #143 (2026-10-08); it does not block the release, since missing keys fall back to English
-   (owner, 2026-10-08). Paste translations replied there into the file. Settles it:
-   `grep -c -e 'name="help_pwm_exponent"' -e 'name="contexts_only_plugged_in"' -e
-   'name="pd_night_light_temp_hint' -e 'name="contexts_offset_' -e
-   'name="settings_night_light_extended"' -e 'name="pd_night_light_extended' -e
-   'name="ssid_help_dump_security"' app/src/main/res/values-b+zh+Hans/strings.xml` prints 12.
+   `pd_night_light_temp_hint_extended` and the two `pd_night_light_extended*` (DD-050), and the
+   bright-light hand-off's 53 (`*handoff*`, `*handed_off*`, `flash_hbm_*`, `flash_calibration_*`,
+   `guide_s10_*`, the two `*_android` labels; DD-071…DD-077). All 65 are asked in #143 (first
+   2026-10-08, its body rewritten 2026-10-18); it does not block a release, since missing keys
+   fall back to English (owner, 2026-10-08). Paste translations replied there into the file.
+   Settles it: `comm -23 <(grep -v 'translatable="false"' app/src/main/res/values/strings.xml |
+   grep -o 'name="[^"]*"' | sort) <(grep -o 'name="[^"]*"'
+   app/src/main/res/values-b+zh+Hans/strings.xml | sort) | wc -l` prints 0 (65 on 2026-10-18).
 
 2. **[2026-10-13] Decide whether to add a check that the output-redaction hook is still wired.**
    Since AMH 15.0.0 both adapters run `scripts/redact-tool-output.sh` after every tool call, but
@@ -80,8 +86,8 @@ stays closed (DB-051…DB-060), and Scorecard.dev is a run-once local input.
 
 **The tree declares `1.15.0` / vc30, this train's ONE bump**, made by the hand-off plan's unit 0
 after v1.14.1 was seen tagged on 2026-10-16 (`git ls-remote --tags --refs origin 'refs/tags/v*'`).
-`changelogs/30.txt` (500-character cap) carries only the hand-off, since the low-lux jitter fix
-moved to the next train. Never bump twice in one train.
+`changelogs/30.txt` (500-character cap) carries only the hand-off. Never bump twice in one
+train.
 
 ## Decided non-items
 
@@ -92,6 +98,24 @@ proposing work; changing it is legislation under RUNBOOK's rule-review protocol.
 ## Changelog
 
 Newest first; ledger rows are the durable detail.
+
+- 2026-10-19 — **Dark-room jitter closed with curve settings, no code: the owner's sensor reports
+  0 or ≥ 1.04 lx, so the rule approved 2026-10-08 never fires and is withdrawn unbuilt; a per-profile
+  MinBright at the curve's ~1.2 lx value holds one target (owner, DD-088, DD-089). The plan file
+  is deleted.**
+
+- 2026-10-19 — **The plan for faster Shizuku paths and Android 17's public brightness API is
+  committed as `docs/plans/PRIVILEGED_FAST_PATHS.md`, spec only (Unit 0). Past the owner's Astra
+  review it waits for ColorOS 17 on the owner's OnePlus 13.**
+
+- 2026-10-18 — **#143 now asks for all 65 untranslated Chinese strings, not 1.14.0's 11: 1.15.0
+  shipped `ssid_help_dump_security` changed and 53 hand-off strings new; Owner queue item 1
+  counts every missing key.**
+
+- 2026-10-17 — **E2E suite on 1.15.0-debug vc30: 17 of 20 auto rows pass, 3 skip on their own
+  preconditions, journal empty, after one harness-timing teardown miss that `--recover` fixed
+  (DD-086). #136's OxygenOS 16 calibration needed "Disable system optimization" on; it stays a
+  workaround (DD-087).**
 
 - 2026-10-17 — **Owner's cursory pass of DEVICE_TEST_SCRIPT §18 on the phone found it all fine;
   Owner queue item 4 is closed and the train goes to its PR (DD-084). Astra's ship check said

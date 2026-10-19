@@ -933,3 +933,45 @@
   1.14.1 that keeps app data while handed off makes 1.14.1's `forceManualMode()` save Tideo's
   AUTOMATIC over the user's mode, which the `handed_off` marker (DD-073) cannot prevent there;
   Android keeps data across a downgrade only for a debuggable build or with root.
+- DD-086: **RUNBOOK playbook 9 on 1.15.0-debug vc30 (`v1.15.0`, 77d8147, owner's CPH2653,
+  2026-10-17): 17 of 20 auto rows pass and 3 skip on their own preconditions, as in DD-044
+  (s06_16, s02_10c, s11_32c at daltonizer 13); the journal ends empty.** The debug package was
+  absent, so the build went on through `--install` as a first install. In the first invocation
+  s13_42's teardown read `external_control_enabled` still `true` after its restore, and the
+  leftover journal errored the six rows after it at setup; `--recover` restored it at once and
+  all seven passed on a rerun, so harness timing, not fixed. Step 7 found only explained churn,
+  `saved_brightness_mode` included: the run's service stops clear it (`restoreMode()`) and only
+  a brightness write re-saves it, with the mode at the owner's MANUAL either way. §18 has no auto
+  row.
+- DD-087: **#136 after v1.15.0: on a OnePlus 15 (OxygenOS 16) display calibration (DD-079) needed
+  Developer options → "Disable system optimization" on, both for `pm grant … DUMP` (a
+  `SecurityException` otherwise) and for the calibration itself, which with DUMP held but the
+  option off failed "Tideo couldn't read dumpsys display" (reporter, 2026-10-17).** The
+  calibration and the readout above 255 survived turning it off again and a reboot. The owner's
+  CPH2653 calibrated on DUMP alone (DD-081) and could not reproduce it; the reporter declined to
+  break a working setup for logs, so it stays as is and similar reports get this workaround
+  (owner). A Pixel 9 Pro on crDroid (Android 16) cannot calibrate and has no such option; the owner
+  asked for `dumpsys display` at high lux under Adaptive Brightness, and calibration only feeds the
+  readout, never the hand-off.
+- DD-088: **The owner's CPH2653 light sensor reports 0 or ≥ 1.04 lx and nothing between, which
+  is what made the dark-room 2 ↔ 3 jitter reported 2026-09-27 (owner's readings, 2026-10-19).**
+  Tasker's `%as_values1` showed `1.0417844` and `1.0856172`, then 0.1 lx steps, at about 4
+  callbacks a second in the dark; Tideo passes `event.values[0]` through unrounded, and only Live
+  Debug's Light Sensor card rounds it to 1 dp (`fmt`), so 1.04 shows as `1,0`. The 1.0–1.2 lx
+  wobble is a ~10 % dead-band stop, while the 0 ↔ ≥ 1.04 switch is a ≥ 35 % change both ways that
+  smooths, settles and moves the target. Below ~1 lx the two dead bands disagree (the relative
+  stop's `+1` spans about ±0.35 lx; the stored band `raw × (1 ± d)` is 0 – 0 at raw 0 once par1 ≥
+  0.2), so DC-070 can place smoothed lux on a narrow re-centred edge, a nudge of hundredths on this
+  sensor. The rule approved 2026-10-08 held only a first-cycle `DEAD_BAND_STOP` at 0.2 ≤ raw < 1
+  lx, so it never fires here; its premise of raw tenths was smoothed lux read as raw, and it is
+  withdrawn unbuilt (owner).
+- DD-089: **The dark-room jitter is fixed by curve settings, not code (owner, 2026-10-19): per
+  profile, MinBright ≥ `round(form1A × √1.2 × scale)` (+ offset) makes 0 lx and the 1.04–1.2 lx
+  readings (DD-088) clamp to one target.** The owner's night profile uses 5 (form1A 5.833,
+  circadian scale 0.85); a drop that ends on a 1.2 reading can still leave smoothed lux at ≥ 1.23
+  lx, one step up, until the next 0 reading. Under PWM-sensitive mode the jitter was Extra Dim's
+  level, not the hardware (floored at the threshold), so a fixed target fixes it too; the owner
+  raised `%AAB_PWMExp` 0.8 → 1.4 to keep the floor as dark (Extra Dim 50.6 at target 5 against
+  51.4 at 0). If another sensor shows the jitter under default settings, the option weighed was a
+  dead band below ~2 lx of `min(1.5 × smallest non-zero reading seen, 1.5 lx)`, learned in memory
+  per sensor session and applied only to fresh readings once settled, never mid-settling (#132).
