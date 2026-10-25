@@ -9,8 +9,8 @@
 - Three independent audits fed it: Opus, Astra (`gpt-6-astra`, high effort) and an earlier ChatGPT
   review of v1.14.1. Every finding below was re-checked against `math-explained` at `20ad58b`. A
   finding that one model made and the code did not bear out was dropped.
-- It does not touch the Night Light write paths, which have their own plan
-  (`NIGHT_LIGHT_SWITCH_ON_ORDER.md`). The two plans share no files.
+- It does not touch the Night Light write paths, which had their own plan, now closed
+  (DD-090…DD-093). The two plans share no files.
 
 ## The motivating example
 
@@ -204,7 +204,8 @@ It also found three over-reaches:
   - The two paths share the order bug, and the existing plan fixes it in both.
   - They otherwise differ by design: anchors, restore and ticks on one side, a device-snapshot diff on
     the other.
-  - After that plan lands, at most a tiny shared write-order helper.
+  - At most a tiny shared write-order helper, which is that plan's Unit 3 (owner, 2026-10-25).
+    It was not landed, since it came out longer than the inline orders (DD-092).
 - **Brightness curve chart:**
   - It plots the base curve, but its "Now" marker shows the final output, which includes
     scale/offset/taper.

@@ -678,6 +678,7 @@
   settled at the expected one; it is not a full red flash. Its cause is not established, and no
   fix is made for it; step 38a now expects it, so a later run can tell whether it grows or goes
   away.
+  Corrected by DD-090.
 - DD-066: **AMH 14.1.0 -> 15.1.0 landed whole in one commit, scripts and seed prose together, so
   the two version keys moved as one (2026-10-13).** MAJOR 15.0.0's binding notes are applied: the
   command guard now denies `rm -rf` and `git clean -fd` aimed at a root or home directory with no
@@ -975,3 +976,30 @@
   51.4 at 0). If another sensor shows the jitter under default settings, the option weighed was a
   dead band below ~2 lx of `min(1.5 × smallest non-zero reading seen, 1.5 lx)`, learned in memory
   per sensor session and applied only to fresh readings once settled, never mid-settling (#132).
+- DD-090 [cited]: **A Night Light switch-on now comes after the profile's Kelvin write, so a
+  switch from a Night-Light-off profile no longer shows the Kelvin the switch-off left held (owner
+  report, 2026-10-20: deep red, then the day value seconds later).** `applyNightLightLocked`
+  enabled first, then wrote the circadian or static Kelvin; leaving a circadian profile writes the
+  next profile's setpoint (DC-056), and the next switch-on showed it, which also explains DD-065's
+  warmer tint. Night Light now comes on later by the write, a Shizuku bind on the extended route or
+  the 750 ms DC-057 probe when one is due, and a failed write still switches on as before. It
+  assumes the service keeps a Kelvin written while off, which the owner's deep red supports and
+  AOSP's behaviour is recalled, not measured; JVM-tested, on-device unverified.
+  Device-checked by DD-093.
+- DD-091 [cited]: **The Privileged Display screen's service-off Apply now writes the Kelvin between
+  the two Night Light edges: a switch-off before it, a switch-on after it.** It switched on or off
+  first, so turning Night Light on with a new setpoint showed the held Kelvin first (DD-090's rule,
+  applied to D-152's direct write). The plan's "move the block after the Kelvin" was split instead,
+  since a switch-off after the write would show the new setpoint while still on. JVM-tested,
+  on-device unverified.
+- DD-092: **No shared Night Light write-order helper: inline, the order is two one-line edges per
+  site, and a helper is longer.** The three sites (DD-059's restore, DD-090, DD-091) each handle
+  failure differently — stop, carry on, collect — so a helper needs inline lambdas with non-local
+  returns, adds a file and a test, and shortens no call site. The service-on and service-off paths
+  stay apart, as the light-refactor audit retained.
+- DD-093: **DD-090 is device-verified: on the owner's OnePlus 13, 1.15.1-debug vc31 (owner,
+  2026-10-25), a context-rule switch from a Night-Light-off profile to a time-based Night Light
+  profile showed no stale Kelvin and was fast.** Night Light switching on after the brightness
+  load is noticeable and accepted (DD-090's trade-off). A service stop put the device Kelvin back
+  and Night Light off (DD-059), and a start switched it on quickly (DD-060). Not run: step 38a,
+  38b's manual load and DD-091's screen Apply, which stays on-device unverified.
