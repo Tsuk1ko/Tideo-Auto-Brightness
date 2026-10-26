@@ -222,6 +222,8 @@ becomes a new DD row in the unit that acts on it:
     automation scenario, or by the owner.
 
 **6. Keep the helper resident (reopens DC-057's per-operation binding).**
+- DE-001 already holds the helper bound, `daemon(false)`; this unit adds only the idle and
+  teardown rules that still earn their place, on that same binding, never a second one.
 - `ShizukuShell` keeps one binding while a feature needs it:
   - `daemon(false)`, so the helper dies with Tideo;
   - bind on first use;

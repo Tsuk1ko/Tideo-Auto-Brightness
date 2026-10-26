@@ -13,13 +13,14 @@ adds super dimming and Privileged Display.
 ## Current state
 
 Harness AMH 15.1.0, scripts and hand-applied seed prose together (DD-066); the live ledger is
-`LEDGER_D.md`. **Release standing is NOT recorded here:** the session banner computes it
+`LEDGER_E.md`. **Release standing is NOT recorded here:** the session banner computes it
 (`scripts/session-facts.sh`, DC-030), settled by hand with
 `git ls-remote --tags --refs origin 'refs/tags/v*'`.
 
-The tree declares 1.15.1 / vc31 (the train paragraph under the Owner queue); 1.14.0's device
+The tree declares 1.15.2 / vc32 (the train paragraph under the Owner queue); 1.14.0's device
 round passed on 1.14.0-debug vc28 (DD-036), and step 38a's #145 check passed on 1.14.1-debug vc29
-with a brief warmer tint before the expected one (DD-065). The 0–4095 conversion
+with a brief warmer tint before the expected one (DD-065); DE-001's held Shizuku helper passed on
+1.15.2-debug vc32 (DE-003). The 0–4095 conversion
 path stays frozen as built (DC-011…DC-013, DC-025…DC-028, DB-083), the light-stall findings H1/H2
 are DD-003/DD-002, no round script is alive (RUNBOOK §6, DB-010), the force-stop investigation
 stays closed (DB-051…DB-060), and Scorecard.dev is a run-once local input.
@@ -81,10 +82,8 @@ stays closed (DB-051…DB-060), and Scorecard.dev is a run-once local input.
    `grep -rc 'ubuntu-24.04' .github/workflows/` prints 0 for every file, or a STATE changelog line
    records (b).
 
-**The tree declares `1.15.1` / vc31, this train's ONE bump**, made by the Night Light switch-on
-plan's unit 1 after v1.15.0 was seen tagged on 2026-10-25 (`git ls-remote --tags --refs origin
-'refs/tags/v*'`). `changelogs/31.txt` (500-character cap) carries only that fix. Never bump twice
-in one train.
+**The tree declares `1.15.2` / vc32, this train's one bump (DE-001)**; 1.15.1 was seen tagged on
+2026-10-26 (`git ls-remote --tags --refs origin 'refs/tags/v*'`). Never bump twice in one train.
 
 ## Decided non-items
 
@@ -96,6 +95,23 @@ proposing work; changing it is legislation under RUNBOOK's rule-review protocol.
 
 Newest first; ledger rows are the durable detail.
 
+- 2026-10-26 — **The held Shizuku helper is now checked locally, so a helper that stops answering
+  cannot hang every later Shizuku call; Astra's PR-time finding, JVM-tested only (DE-004).**
+- 2026-10-26 — **Shizuku helper reuse closed: the owner passed DE-001 on 1.15.2-debug vc32 holding
+  the verdict, with one helper across the switches, 7308 K first, and a clean rebind after a
+  Shizuku restart (DE-003); plan deleted.**
+- 2026-10-26 — **Shizuku's helper now stays bound, so a return from a Night-Light-off profile no
+  longer shows 4082 K for ~5 s; 1.15.2 / vc32, step 38b gains a debug-install case, JVM-tested
+  only (DE-001). 1.15.1's fix missed on release because only the debug install, which lacked
+  the verdict, was checked; device checks now give it the release install's learned facts first
+  (DE-002, owner).**
+- 2026-10-26 — **Shizuku helper-reuse plan revised after Sol's review: the lost connect is the
+  client's cached connection (read from 13.1.5's bytecode), any failure releases the binding, and
+  the device check runs on the debug install once its own probe has learned the verdict (owner).**
+- 2026-10-26 — **Planned the Shizuku helper reuse: on return from a Night-Light-off profile the
+  anchor read and the Kelvin write bind twice, and the second bind hangs 4 s, so Night Light
+  shows 4082 K before 7308 K (owner's release install, measured over adb); the fix keeps the
+  helper bound (owner). Spec only.**
 - 2026-10-25 — **Night Light switch-on order closed: the owner passed the context-switch case on
   1.15.1-debug vc31; the screen's Apply stays on-device unverified (DD-090…DD-093).**
 - 2026-10-25 — **The session banner now fetches and warns when HEAD can fast-forward to any branch,
